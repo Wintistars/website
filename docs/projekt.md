@@ -77,6 +77,8 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 
 ## Offene Punkte
 
+- Studio-Deploy per GitHub Action: Secret `SANITY_AUTH_TOKEN` setzen (Token mit Rolle «Deploy Studio»,
+  sanity.io/manage → API → Tokens), sonst schlägt `.github/workflows/studio-deploy.yml` fehl.
 - Spielplan-Rebuild: Secret `CLOUDFLARE_DEPLOY_HOOK` im GitHub-Repo setzen (Wert = Deploy-Hook `sanity-publish`),
   sonst schlägt `.github/workflows/rebuild.yml` fehl. GitHub pausiert geplante Workflows nach 60 Tagen ohne Commits.
 - Spielplan: SIHF-Link beim Team im Studio eintragen (`https://www.sihf.ch/de/game-center/team/109-2-710048`).

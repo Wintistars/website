@@ -1,0 +1,41 @@
+# Veröffentlicht das Sanity Studio (https://wintistars.sanity.studio), sobald sich auf main etwas unter studio/ ändert.
+# Damit sehen Editoren neue Felder ohne manuelles `npm run studio:deploy`.
+# Secret SANITY_AUTH_TOKEN = Token mit Rolle «Deploy Studio» (sanity.io/manage → Projekt → API → Tokens).
+name: Studio deployen
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'studio/**'
+      - '.github/workflows/studio-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: studio-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: studio/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - name: Studio und Schema deployen
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+        run: |
+          if [ -z "$SANITY_AUTH_TOKEN" ]; then echo "::error::Secret SANITY_AUTH_TOKEN fehlt"; exit 1; fi
+          npx sanity deploy -y --schema-required
