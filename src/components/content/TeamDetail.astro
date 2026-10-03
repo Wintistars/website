@@ -1,5 +1,6 @@
 ---
 import type { Team } from '../../lib/types';
+import { VEREIN } from '../../lib/verein';
 import SanityPicture from '../SanityPicture.astro';
 import SpielerCard from '../SpielerCard.astro';
 import RichText from '../richtext/RichText.astro';
@@ -12,8 +13,7 @@ const { team } = Astro.props;
 ---
 
 <article>
-  {team.kategorie && <p class="muted">{team.kategorie}</p>}
-  <h1>{team.name}</h1>
+  <h1>{VEREIN}</h1>
   <SanityPicture image={team.teamfoto} ratio={3 / 2} widths={[800, 1200, 1600]} sizes="(min-width: 72rem) 70rem, 100vw" eager />
   {team.trainer && <p><strong>Trainer:</strong> {team.trainer}</p>}
   <div class="prose"><RichText value={team.beschreibung} /></div>

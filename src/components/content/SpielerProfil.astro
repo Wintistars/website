@@ -1,11 +1,12 @@
 ---
-import type { SpielerMitTeams } from '../../lib/types';
+import type { Spieler } from '../../lib/types';
 import { POSITION_LABEL } from '../../lib/format';
+import { VEREIN } from '../../lib/verein';
 import SanityPicture from '../SanityPicture.astro';
 import RichText from '../richtext/RichText.astro';
 
 interface Props {
-  spieler: SpielerMitTeams;
+  spieler: Spieler;
 }
 
 const { spieler } = Astro.props;
@@ -19,12 +20,8 @@ const { spieler } = Astro.props;
     <dl>
       {spieler.position && (<><dt>Position</dt><dd>{POSITION_LABEL[spieler.position]}</dd></>)}
       {spieler.jahrgang && (<><dt>Jahrgang</dt><dd>{spieler.jahrgang}</dd></>)}
-      {spieler.teams.length > 0 && (
-        <>
-          <dt>Team</dt>
-          <dd>{spieler.teams.map((t, i) => (<>{i > 0 && ', '}<a href={`/teams/${t.slug}/`}>{t.name}</a></>))}</dd>
-        </>
-      )}
+      <dt>Team</dt>
+      <dd><a href="/team/">{VEREIN}</a></dd>
     </dl>
     <div class="prose"><RichText value={spieler.text} /></div>
   </div>

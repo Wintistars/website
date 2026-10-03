@@ -1,6 +1,7 @@
 // Spielplan als Kalender-Abo (iCalendar), z. B. für Handy-Kalender: https://www.wintistars.ch/spielplan.ics
 import type { APIRoute } from 'astro';
 import { ART_LABEL, getAlleSpiele, type Spiel } from '../lib/spielplan';
+import { VEREIN } from '../lib/verein';
 
 const STANDARD_DAUER_MS = 2 * 60 * 60 * 1000;
 
@@ -13,7 +14,7 @@ export const GET: APIRoute = async ({ site }) => {
     'PRODID:-//EHC Wintistars//Spielplan//DE',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'X-WR-CALNAME:EHC Wintistars',
+    `X-WR-CALNAME:${VEREIN}`,
     'X-WR-TIMEZONE:Europe/Zurich',
     ...spiele.flatMap((s) => termin(s, jetzt, new URL('/spielplan/', site).href)),
     'END:VCALENDAR',

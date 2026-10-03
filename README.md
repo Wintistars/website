@@ -38,3 +38,5 @@ Optional für lokale Skripte/CLI mit Schreibrechten in Sanity: `cp .env.example 
 ## Content-Modell
 
 Siehe [studio/schemaTypes/](studio/schemaTypes/). Die Startseite zeigt die Seite mit der Adresse `home`.
+Der Club hat ein Team: «Teaminfos & Kader» (`team`, Seite `/team/`) und «Spielplan – Einstellungen» (`spielplan`,
+SIHF-Link für die Meisterschaftsspiele) gibt es im Studio je genau einmal.

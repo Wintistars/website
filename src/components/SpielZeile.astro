@@ -4,11 +4,9 @@ import { formatSpieltag, formatUhrzeit } from '../lib/zeit';
 
 interface Props {
   spiel: Spiel;
-  /** Team anzeigen, wenn mehrere Teams im Spielplan stehen. */
-  zeigeTeam?: boolean;
 }
 
-const { spiel, zeigeTeam = false } = Astro.props;
+const { spiel } = Astro.props;
 const { resultat } = spiel;
 ---
 
@@ -19,18 +17,17 @@ const { resultat } = spiel;
   </time>
 
   <div class="begegnung">
-    <span class:list={['team', { wir: spiel.heim === spiel.team.name }]}>{spiel.heim}</span>
+    <span class:list={['team', { wir: spiel.wir === 'heim' }]}>{spiel.heim}</span>
     <span class="resultat" aria-label={resultat ? `Resultat ${resultat.heim} zu ${resultat.gast}` : undefined}>
       {resultat ? `${resultat.heim}:${resultat.gast}` : '–'}
       {resultat && spiel.zusatz && <small>{spiel.zusatz}</small>}
     </span>
-    <span class:list={['team', { wir: spiel.gast === spiel.team.name }]}>{spiel.gast}</span>
+    <span class:list={['team', { wir: spiel.wir === 'gast' }]}>{spiel.gast}</span>
   </div>
 
   <div class="info muted">
     <span class:list={['art', spiel.art]}>{ART_LABEL[spiel.art]}</span>
     {spiel.hinweis && <span class="hinweis">{spiel.hinweis}</span>}
-    {zeigeTeam && <span>{spiel.team.name}</span>}
     {spiel.ort && <span>{spiel.ort}</span>}
     {spiel.bemerkung && <span>{spiel.bemerkung}</span>}
     {

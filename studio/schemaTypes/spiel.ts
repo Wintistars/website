@@ -1,7 +1,7 @@
 import { defineField, defineType } from 'sanity';
 
 // Spiele, die Swiss Ice Hockey nicht kennt (Plauschspiele, Turniere usw.).
-// Meisterschaftsspiele kommen automatisch über den SIHF-Link beim Team.
+// Meisterschaftsspiele kommen automatisch über den SIHF-Link unter Spielplan → Einstellungen.
 
 const ARTEN = [
   { title: 'Plauschspiel', value: 'plausch' },
@@ -14,7 +14,7 @@ const TORE_BESCHREIBUNG = 'Nach dem Spiel ausfüllen. Leer lassen, solange das S
 
 export const spiel = defineType({
   name: 'spiel',
-  title: 'Spiel (Plausch/Turnier)',
+  title: 'Plausch- & Turnierspiel',
   type: 'document',
   fields: [
     defineField({
@@ -36,13 +36,6 @@ export const spiel = defineType({
           if (!ende || !beginn) return true;
           return new Date(ende) > new Date(beginn) ? true : 'Das Ende muss nach dem Anpfiff liegen.';
         }),
-    }),
-    defineField({
-      name: 'team',
-      title: 'Team',
-      type: 'reference',
-      to: [{ type: 'team' }],
-      validation: (rule) => rule.required(),
     }),
     defineField({ name: 'gegner', title: 'Gegner', type: 'string', validation: (rule) => rule.required() }),
     defineField({
@@ -91,9 +84,8 @@ export const spiel = defineType({
       toreTeam: 'toreTeam',
       toreGegner: 'toreGegner',
       abgesagt: 'abgesagt',
-      team: 'team.name',
     },
-    prepare({ gegner, heimspiel, beginn, art, toreTeam, toreGegner, abgesagt, team }) {
+    prepare({ gegner, heimspiel, beginn, art, toreTeam, toreGegner, abgesagt }) {
       const wir = 'Wintistars';
       const heim = heimspiel !== false;
       const title = heim ? `${wir} – ${gegner ?? '?'}` : `${gegner ?? '?'} – ${wir}`;
@@ -111,7 +103,7 @@ export const spiel = defineType({
       const artTitel = ARTEN.find((a) => a.value === art)?.title;
       const hatResultat = typeof toreTeam === 'number' && typeof toreGegner === 'number';
       const resultat = hatResultat ? (heim ? `${toreTeam}:${toreGegner}` : `${toreGegner}:${toreTeam}`) : undefined;
-      const subtitle = [datum, team, artTitel, resultat, abgesagt ? 'abgesagt' : undefined].filter(Boolean).join(' · ');
+      const subtitle = [datum, artTitel, resultat, abgesagt ? 'abgesagt' : undefined].filter(Boolean).join(' · ');
       return { title, subtitle };
     },
   },

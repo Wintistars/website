@@ -30,7 +30,7 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 | Framework | Astro, Static Site Generation, TypeScript strict | Schnell, wenig JS. Ursprünglich Angular geplant; Angular-Komponenten wären als Astro-Islands möglich. |
 | CMS | **Sanity** (Free-Plan), Studio unter `studio/`, gehostet auf `wintistars.sanity.studio` | Gratis bis 20 Benutzer, Bild-CDN, Schema im Code. Storyblok verworfen (2026-10-03): Free nur 1 Benutzer, ab 5 Benutzern $99/Monat. |
 | Sanity-Projekt | Projekt-ID `j2uq9efj`, Dataset `production` (öffentlich), Organisation `ofwcx1pff` | Öffentliches Dataset: Build braucht keinen Token; Entwürfe bleiben privat. |
-| Content-Typen | `news`, `spieler`, `team`, `seite`, `spiel` | Schema in `studio/schemaTypes/`. Startseite = `seite` mit Adresse `home`. |
+| Content-Typen | `news`, `spieler`, `team`, `spielplan`, `seite`, `spiel` | Schema in `studio/schemaTypes/`. Startseite = `seite` mit Adresse `home`. Ein Team: `team` (Teaminfos & Kader) und `spielplan` (SIHF-Link) sind Singletons, Seite `/team/`. Struktur ist vorläufig und kann sich mit dem Design noch ändern. |
 | Code | GitHub-Repo <https://github.com/Wintistars/website> (Organisation «Wintistars»), `main` geschützt, Pull Requests | |
 | Hosting | **Cloudflare Pages** (Free) – Build `npm run build`, Output `dist` | 500 Builds/Monat. Netlify Free verworfen (nur ca. 20 Deploys/Monat), Vercel Hobby verbietet kommerzielle Nutzung (Sponsoren). |
 | Rebuild | Sanity-Webhook (create/update/delete) → Deploy-Hook von Cloudflare Pages | Inhalte gehen ohne Entwickler live. |
@@ -95,7 +95,7 @@ GitHub-Secret verwenden. Claude Code hat per Einstellung keinen Zugriff auf `.en
   sanity.io/manage → API → Tokens), sonst schlägt `.github/workflows/studio-deploy.yml` fehl.
 - Spielplan-Rebuild: Secret `CLOUDFLARE_DEPLOY_HOOK` im GitHub-Repo setzen (Wert = Deploy-Hook `sanity-publish`),
   sonst schlägt `.github/workflows/rebuild.yml` fehl. GitHub pausiert geplante Workflows nach 60 Tagen ohne Commits.
-- Spielplan: SIHF-Link beim Team im Studio eintragen (`https://www.sihf.ch/de/game-center/team/109-2-710048`).
+- Spielplan: SIHF-Link im Studio unter Spielplan → Einstellungen eintragen (`https://www.sihf.ch/de/game-center/team/109-2-710048`).
 - Logo als Vektordatei beschaffen (Original), danach Farben/Design-Tokens in `src/styles/global.css` festlegen.
 - Live-Vorschau von Entwürfen (Sanity Presentation/Visual Editing): braucht eine SSR-Vorschau-Umgebung. Noch nicht eingerichtet.
 - DNS-Zugriff für wintistars.ch klären.

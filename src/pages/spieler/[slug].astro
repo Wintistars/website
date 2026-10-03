@@ -3,7 +3,7 @@ import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SpielerProfil from '../../components/content/SpielerProfil.astro';
 import { getSpieler } from '../../lib/sanity';
-import type { SpielerMitTeams } from '../../lib/types';
+import type { Spieler } from '../../lib/types';
 
 export const getStaticPaths = (async () => {
   const spieler = await getSpieler();
@@ -11,7 +11,7 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 interface Props {
-  spieler: SpielerMitTeams;
+  spieler: Spieler;
 }
 
 const { spieler } = Astro.props;

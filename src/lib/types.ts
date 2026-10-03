@@ -37,24 +37,11 @@ export interface Spieler {
   text?: RichText;
 }
 
-export interface TeamRef {
-  name: string;
-  slug: string;
-}
-
-export interface SpielerMitTeams extends Spieler {
-  teams: TeamRef[];
-}
-
+/** Singleton `team` (Teaminfos & Kader). Der Teamname ist fest: VEREIN in src/lib/verein.ts. */
 export interface Team {
   _id: string;
-  name: string;
-  slug: string;
-  kategorie?: string;
   teamfoto?: SanityImage;
   trainer?: string;
-  /** Link zur Teamseite im SIHF Game Center (Quelle für Meisterschaftsspiele). */
-  sihfUrl?: string;
   beschreibung?: RichText;
   spieler: Spieler[];
 }
@@ -71,7 +58,6 @@ export interface SanitySpiel {
   _id: string;
   beginn: string; // ISO-Datetime (UTC)
   ende?: string;
-  team: TeamRef;
   gegner: string;
   heimspiel: boolean;
   ort?: string;
@@ -82,9 +68,8 @@ export interface SanitySpiel {
   bemerkung?: string;
 }
 
-/** Team mit hinterlegtem SIHF-Link (Quelle für Meisterschaftsspiele). */
-export interface SihfQuelle {
-  name: string;
-  slug: string;
-  sihfUrl: string;
+/** Singleton `spielplan` (Spielplan – Einstellungen). */
+export interface SpielplanEinstellungen {
+  /** Link zur Teamseite im SIHF Game Center (Quelle für Meisterschaftsspiele). */
+  sihfUrl?: string;
 }
