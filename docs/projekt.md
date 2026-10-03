@@ -31,7 +31,7 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 | CMS | **Sanity** (Free-Plan), Studio unter `studio/`, gehostet auf `wintistars.sanity.studio` | Gratis bis 20 Benutzer, Bild-CDN, Schema im Code. Storyblok verworfen (2026-10-03): Free nur 1 Benutzer, ab 5 Benutzern $99/Monat. |
 | Sanity-Projekt | Projekt-ID `j2uq9efj`, Dataset `production` (öffentlich), Organisation `ofwcx1pff` | Öffentliches Dataset: Build braucht keinen Token; Entwürfe bleiben privat. |
 | Content-Typen | `news`, `spieler`, `team`, `seite` | Schema in `studio/schemaTypes/`. Startseite = `seite` mit Adresse `home`. |
-| Code | GitHub-Repo unter einer Club-Organisation, `main` geschützt, Pull Requests | |
+| Code | GitHub-Repo <https://github.com/SirSiLves/wintistars> (persönliches Konto von Yves; Club-Organisation optional später), `main` geschützt, Pull Requests | |
 | Hosting | **Cloudflare Pages** (Free) – Build `npm run build`, Output `dist` | 500 Builds/Monat. Netlify Free verworfen (nur ca. 20 Deploys/Monat), Vercel Hobby verbietet kommerzielle Nutzung (Sponsoren). |
 | Rebuild | Sanity-Webhook (create/update/delete) → Deploy-Hook von Cloudflare Pages | Inhalte gehen ohne Entwickler live. |
 | Bilder | Sanity-Bild-CDN (`src/lib/image.ts`, `SanityPicture`) | Keine Bilder im Repo; Grössen/Formate on the fly, Hotspot-Zuschnitt. |
@@ -49,8 +49,9 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 
 1. [x] Astro-Projekt anlegen (Grundgerüst, Content-Typen, Seitenstruktur)
 2. [x] CMS-Wechsel auf Sanity, Studio im Repo
-3. [ ] GitHub-Repository (Club-Organisation) anlegen und pushen, `main` schützen
-4. [ ] Studio deployen (`npx sanity login`, dann `npm run studio:deploy`)
+3. [x] GitHub-Repository angelegt und gepusht (SirSiLves/wintistars)
+   - [ ] `main` schützen (Branch-Protection)
+4. [x] Studio deployen (https://wintistars.sanity.studio) (`npx sanity login`, dann `npm run studio:deploy`)
 5. [ ] Cloudflare Pages mit dem Repository verbinden (Framework Astro, `npm run build`, `dist`)
 6. [ ] Deploy-Hook von Cloudflare als Sanity-Webhook eintragen (sanity.io/manage → API → Webhooks)
 7. [ ] Editoren im Sanity-Projekt einladen; Inhalte von der alten Seite migrieren (Testlauf)
