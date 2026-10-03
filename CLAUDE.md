@@ -16,7 +16,9 @@ Allgemeine Astro-Hinweise: @AGENTS.md
 - `npm run studio:deploy` – Studio manuell nach wintistars.sanity.studio veröffentlichen (braucht `npx sanity login`).
   Normalerweise nicht nötig: `.github/workflows/studio-deploy.yml` deployt bei Änderungen unter `studio/` auf `main`.
 
-Es gibt keine Secrets: Das Dataset ist öffentlich, Projekt-ID/Dataset stehen in `src/lib/sanity.ts` und `studio/sanity.cli.ts`.
+Website-Build und Dev-Server brauchen keine Secrets: Das Dataset ist öffentlich, Projekt-ID/Dataset stehen in `src/lib/sanity.ts`
+und `studio/sanity.cli.ts`. Optional lokal `.env` (Vorlage `.env.example`) mit `SANITY_AUTH_TOKEN` für Skripte/CLI – nie committen.
+GitHub-Secrets: `SANITY_AUTH_TOKEN` (Studio-Deploy), `CLOUDFLARE_DEPLOY_HOOK` (täglicher Rebuild).
 
 ## Struktur
 
