@@ -30,7 +30,13 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: studio/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            studio/package-lock.json
+      # Root-Pakete auch installieren: Der Studio-Build (Vite) liest die Root-tsconfig mit,
+      # und die erweitert astro/tsconfigs/strict.
+      - run: npm ci
+        working-directory: .
       - run: npm ci
       - run: npm run check
       - name: Studio und Schema deployen
