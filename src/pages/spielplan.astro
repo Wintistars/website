@@ -1,10 +1,56 @@
 ---
-// Platzhalter. Automatischer Import aus der Verbandsquelle (Swiss Ice Hockey) ist noch zu prüfen,
-// siehe docs/projekt.md -> "Offene Punkte".
+// Meisterschaftsspiele kommen beim Build von Swiss Ice Hockey, Plauschspiele aus Sanity (src/lib/spielplan.ts).
+// Damit neue Resultate erscheinen, baut eine GitHub Action die Seite regelmässig neu (.github/workflows/rebuild.yml).
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SpielZeile from '../components/SpielZeile.astro';
+import { getSpielplan } from '../lib/spielplan';
+import { formatSpieltag, formatUhrzeit } from '../lib/zeit';
+
+const stand = new Date();
+const { kommend, resultate, mehrereTeams } = await getSpielplan(stand);
 ---
 
-<BaseLayout title="Spielplan">
+<BaseLayout title="Spielplan" description="Spiele und Resultate des EHC Wintistars">
   <h1>Spielplan</h1>
-  <p class="muted">Der Spielplan folgt in Kürze.</p>
+
+  <section aria-labelledby="kommend">
+    <h2 id="kommend">Nächste Spiele</h2>
+    {
+      kommend.length > 0 ? (
+        <ol class="spiele">
+          {kommend.map((s) => <SpielZeile spiel={s} zeigeTeam={mehrereTeams} />)}
+        </ol>
+      ) : (
+        <p class="muted">Zurzeit sind keine Spiele angesetzt.</p>
+      )
+    }
+  </section>
+
+  {
+    resultate.length > 0 && (
+      <section aria-labelledby="resultate">
+        <h2 id="resultate">Resultate</h2>
+        <ol class="spiele">
+          {resultate.map((s) => <SpielZeile spiel={s} zeigeTeam={mehrereTeams} />)}
+        </ol>
+      </section>
+    )
+  }
+
+  <p class="muted quelle">
+    Meisterschaftsspiele und Resultate: <a href="https://www.sihf.ch/de/game-center/" rel="noopener">Swiss Ice Hockey</a>.
+    Stand {formatSpieltag(stand)}, {formatUhrzeit(stand)} Uhr.
+    <a href="/spielplan.ics">Spielplan im Kalender abonnieren</a>
+  </p>
 </BaseLayout>
+
+<style>
+  .spiele {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+  }
+  .quelle {
+    font-size: 0.85rem;
+  }
+</style>

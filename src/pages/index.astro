@@ -2,13 +2,27 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SeiteInhalt from '../components/content/SeiteInhalt.astro';
 import NewsCard from '../components/NewsCard.astro';
+import SpielZeile from '../components/SpielZeile.astro';
 import { getHome, getNews } from '../lib/sanity';
+import { getNaechstesSpiel } from '../lib/spielplan';
 
-const [home, news] = await Promise.all([getHome(), getNews(6)]);
+const [home, news, naechstesSpiel] = await Promise.all([getHome(), getNews(6), getNaechstesSpiel()]);
 ---
 
 <BaseLayout>
   {home ? <SeiteInhalt seite={home} hideTitle /> : <h1>EHC Wintistars</h1>}
+
+  {
+    naechstesSpiel && (
+      <section>
+        <h2>Nächstes Spiel</h2>
+        <ol class="naechstes">
+          <SpielZeile spiel={naechstesSpiel} />
+        </ol>
+        <p><a href="/spielplan/">Ganzer Spielplan →</a></p>
+      </section>
+    )
+  }
 
   <section>
     <h2>News</h2>
@@ -20,3 +34,11 @@ const [home, news] = await Promise.all([getHome(), getNews(6)]);
     <p><a href="/news/">Alle News →</a></p>
   </section>
 </BaseLayout>
+
+<style>
+  .naechstes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+</style>
