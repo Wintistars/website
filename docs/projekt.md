@@ -62,8 +62,8 @@ Werte stehen nie im Repo. Website-Build und `npm run dev` brauchen keine davon.
 
 | Name | Wo gespeichert | Rechte | Wofür |
 | --- | --- | --- | --- |
-| `SANITY_AUTH_TOKEN` (Token «Lokal – Yves») | Lokal in `.env` im Repo-Root (Vorlage `.env.example`, `.env` ist in `.gitignore`) | Alle Rollen | Lokale Skripte/CLI, z. B. Inhalte per Skript anlegen oder importieren: `set -a; source .env; set +a` |
-| `SANITY_AUTH_TOKEN` (Token «GitHub Actions – Studio deploy») | GitHub → Repo-Secrets (gesetzt 2026-10-03) | Soll: nur «Deploy Studio» (prüfen, ob der gesetzte Token eingeschränkt ist) | `.github/workflows/studio-deploy.yml` |
+| `SANITY_AUTH_TOKEN` (Token «Local Development») | Lokal in `.env` im Repo-Root (Vorlage `.env.example`, `.env` ist in `.gitignore`) | Alle Rollen | Lokale Skripte/CLI, z. B. Inhalte per Skript anlegen oder importieren: `set -a; source .env; set +a` |
+| `SANITY_AUTH_TOKEN` (Token «GitHub Actions – Studio deploy») | GitHub → Repo-Secrets (gesetzt 2026-10-03) | Nur «Deploy Studio» | `.github/workflows/studio-deploy.yml` |
 | `CLOUDFLARE_DEPLOY_HOOK` | GitHub → Repo-Secrets (gesetzt 2026-10-03) | Löst nur einen Build aus | `.github/workflows/rebuild.yml` (täglicher Spielplan-Rebuild) |
 | Sanity-Webhook «Cloudflare Rebuild» | sanity.io/manage → API → Webhooks | – | Rebuild bei Veröffentlichung im Studio |
 
