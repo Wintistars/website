@@ -1,0 +1,15 @@
+---
+// Rendert Portable Text aus Sanity (Absätze, Überschriften, Listen, Links, Bilder).
+import { PortableText } from 'astro-portabletext';
+import type { RichText } from '../../lib/types';
+import RichTextImage from './RichTextImage.astro';
+
+interface Props {
+  value?: RichText;
+}
+
+const { value } = Astro.props;
+const components = { type: { image: RichTextImage } };
+---
+
+{value && value.length > 0 && <PortableText value={value} components={components} />}

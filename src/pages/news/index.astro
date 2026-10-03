@@ -1,12 +1,12 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NewsCard from '../../components/NewsCard.astro';
-import { getNews } from '../../lib/storyblok';
+import { getNews } from '../../lib/sanity';
 
 const news = await getNews();
 ---
 
 <BaseLayout title="News">
   <h1>News</h1>
-  <div class="grid">{news.map((story) => <NewsCard story={story} />)}</div>
+  {news.length > 0 ? <div class="grid">{news.map((n) => <NewsCard news={n} />)}</div> : <p class="muted">Noch keine News.</p>}
 </BaseLayout>

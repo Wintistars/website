@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import SbPicture from '../../components/SbPicture.astro';
-import { getTeams } from '../../lib/storyblok';
+import SanityPicture from '../../components/SanityPicture.astro';
+import { getTeams } from '../../lib/sanity';
 
 const teams = await getTeams();
 ---
@@ -11,10 +11,10 @@ const teams = await getTeams();
   <div class="grid">
     {
       teams.map((team) => (
-        <a href={`/${team.full_slug}/`} class="team">
-          <SbPicture asset={team.content.teamfoto} ratio={3 / 2} widths={[400, 800]} sizes="(min-width: 64rem) 22rem, 100vw" />
-          <h2>{team.content.name}</h2>
-          {team.content.kategorie && <p class="muted">{team.content.kategorie}</p>}
+        <a href={`/teams/${team.slug}/`} class="team">
+          <SanityPicture image={team.teamfoto} ratio={3 / 2} widths={[400, 800]} sizes="(min-width: 64rem) 22rem, 100vw" />
+          <h2>{team.name}</h2>
+          {team.kategorie && <p class="muted">{team.kategorie}</p>}
         </a>
       ))
     }

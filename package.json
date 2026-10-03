@@ -10,17 +10,22 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "check": "astro check"
+    "check": "astro check",
+    "studio": "npm --prefix studio run dev",
+    "studio:deploy": "npm --prefix studio run deploy"
   },
   "dependencies": {
-    "@storyblok/astro": "^10.3.2",
-    "astro": "^7.3.5"
+    "@sanity/client": "^8.9.0",
+    "@sanity/image-url": "^2.1.1",
+    "astro": "^7.3.5",
+    "astro-portabletext": "^1.0.1"
   },
   "allowScripts": {
     "esbuild": true
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@portabletext/types": "^4.0.2",
     "typescript": "^6.0.3"
   },
   "private": true

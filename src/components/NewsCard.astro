@@ -1,23 +1,22 @@
 ---
-import type { NewsStory } from '../lib/types';
+import type { News } from '../lib/types';
 import { formatDatum } from '../lib/format';
-import SbPicture from './SbPicture.astro';
+import SanityPicture from './SanityPicture.astro';
 
 interface Props {
-  story: NewsStory;
+  news: News;
 }
 
-const { story } = Astro.props;
-const { titel, datum, lead, bild } = story.content;
+const { news } = Astro.props;
 ---
 
 <article class="card">
-  <a href={`/${story.full_slug}/`}>
-    <SbPicture asset={bild} ratio={16 / 9} widths={[400, 800]} sizes="(min-width: 64rem) 22rem, 100vw" />
+  <a href={`/news/${news.slug}/`}>
+    <SanityPicture image={news.bild} ratio={16 / 9} widths={[400, 800]} sizes="(min-width: 64rem) 22rem, 100vw" />
     <div class="body">
-      {datum && <time datetime={datum.replace(' ', 'T')} class="muted">{formatDatum(datum)}</time>}
-      <h3>{titel}</h3>
-      {lead && <p>{lead}</p>}
+      {news.datum && <time datetime={news.datum} class="muted">{formatDatum(news.datum)}</time>}
+      <h3>{news.titel}</h3>
+      {news.lead && <p>{news.lead}</p>}
     </div>
   </a>
 </article>

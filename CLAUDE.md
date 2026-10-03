@@ -1,44 +1,44 @@
 # EHC Wintistars – Club-Website
 
 Neue Website für den Eishockeyclub EHC Wintistars (Winterthur), ersetzt www.wintistars.ch.
-Astro (SSG, TypeScript strict) + Storyblok (Headless CMS). Kommunikation mit Yves auf Deutsch.
+Astro (SSG, TypeScript strict) + Sanity (Headless CMS) + Cloudflare Pages. Kommunikation mit Yves auf Deutsch.
 
 Projektbrief, Entscheide, Status und offene Punkte: @docs/projekt.md
 Allgemeine Astro-Hinweise: @AGENTS.md
 
 ## Befehle
 
-- `npm run dev` – Dev-Server (lädt Storyblok-Entwürfe, braucht `STORYBLOK_TOKEN` in `.env`)
-- `npm run build` – statischer Build nach `dist/` (lädt veröffentlichte Inhalte)
-- `npm run check` – Typecheck (`astro check`); vor jedem Commit ausführen
+- `npm run dev` – Website lokal (http://localhost:4321), liest veröffentlichte Inhalte aus Sanity
+- `npm run build` – statischer Build nach `dist/`
+- `npm run check` – Typecheck Website; vor jedem Commit ausführen
+- `npm run studio` – Sanity Studio lokal (http://localhost:3333), eigenes Paket unter `studio/` (`npm --prefix studio install`)
+- `npm --prefix studio run check` – Typecheck Studio
+- `npm run studio:deploy` – Studio nach wintistars.sanity.studio veröffentlichen (braucht `npx sanity login`)
 
-Ohne gültigen `STORYBLOK_TOKEN` schlägt der Build bewusst fehl (keine leere Seite deployen).
+Es gibt keine Secrets: Das Dataset ist öffentlich, Projekt-ID/Dataset stehen in `src/lib/sanity.ts` und `studio/sanity.cli.ts`.
 
 ## Struktur
 
-- `astro.config.mjs` – Storyblok-Integration, Mapping Komponentenname → `src/storyblok/*.astro`
-- `storyblok/components.json` – Content-Modell (Quelle der Wahrheit)
-- `src/lib/types.ts` – TS-Typen der Storyblok-Komponenten
-- `src/lib/storyblok.ts` – einziger Datenzugriff auf Storyblok (`getNews`, `getTeams`, …)
-- `src/lib/image.ts` – URLs fürs Storyblok-Bild-CDN; `src/components/SbPicture.astro` nutzen
-- `src/storyblok/` – Rendering je Storyblok-Komponente (mit `storyblokEditable`)
+- `studio/schemaTypes/` – Content-Modell (Quelle der Wahrheit); `fields.ts` = gemeinsame Felder (Bild, Rich Text, Slug)
+- `src/lib/sanity.ts` – Sanity-Client und alle GROQ-Abfragen (`getNews`, `getTeams`, `getSpieler`, `getSeiten`, `getHome`)
+- `src/lib/types.ts` – TS-Typen passend zu den GROQ-Projektionen
+- `src/lib/image.ts` + `src/components/SanityPicture.astro` – Bilder über das Sanity-Bild-CDN
+- `src/components/richtext/` – Portable Text (Rich Text) inkl. Bildern
+- `src/components/content/` – Darstellung je Dokumenttyp
 - `src/pages/` – Routen: `/`, `/news/[slug]`, `/teams/[slug]`, `/spieler/[slug]`, `/spielplan`, `/[...slug]` (Typ `seite`)
 
-## Storyblok-Konventionen
+## Konventionen
 
-- Ordner (full_slug-Präfix): `news/`, `teams/`, `spieler/`; Seiten liegen im Root, Startseite = Story `home`.
-- Content-Typen: `news`, `spieler`, `team`, `seite`; verschachtelbare Blöcke: `text`, `bild`.
-- Team → Spieler ist eine Relation (`team.spieler`, aufgelöst via `resolve_relations`).
-- Änderung am Content-Modell immer an drei Stellen synchron: `storyblok/components.json`,
-  `src/lib/types.ts`, `src/storyblok/*.astro` (+ Mapping in `astro.config.mjs`).
-  Dafür gibt es den Subagent `storyblok-schema`.
+- Dokumenttypen: `news`, `spieler`, `team`, `seite`. Startseite = `seite` mit Slug `home`.
+  Navigation (`src/lib/navigation.ts`) verlinkt `/club/` und `/kontakt/` → dafür braucht es Seiten mit diesen Slugs.
+- Team → Spieler ist ein Referenz-Array (`team.spieler`, Reihenfolge = Kader-Reihenfolge).
+- Änderung am Content-Modell immer synchron in Schema, GROQ, Typen und Komponenten → Subagent `sanity-schema`.
 
 ## Rahmenbedingungen
 
-- Editoren haben **keinen GitHub-Zugang**: Inhalte gehören nach Storyblok, nicht ins Repo.
-  Keine Bilder/Texte hart codieren, die sich ändern können.
+- Editoren haben **keinen GitHub-Zugang**: Inhalte gehören nach Sanity, nicht ins Repo.
+  Keine Bilder/Texte hart codieren, die sich ändern können. Studio-Texte für Nicht-Techniker formulieren.
 - Logo nur als originalgetreue Vektordatei verwenden, nie aus Fotos nachbauen.
   Farben in `src/styles/global.css` sind Platzhalter, bis Logo/Trikotfarben definitiv sind.
-- Secrets nur über Umgebungsvariablen (`.env` ist gitignored, Vorlage `.env.example`).
 - `main` ist geschützt: Änderungen per Branch + Pull Request.
 - UI-Texte auf Deutsch (de-CH, «ss» statt «ß»).

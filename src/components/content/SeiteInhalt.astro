@@ -1,0 +1,17 @@
+---
+import type { Seite } from '../../lib/types';
+import RichText from '../richtext/RichText.astro';
+
+interface Props {
+  seite: Seite;
+  /** Titel ausblenden, z. B. auf der Startseite. */
+  hideTitle?: boolean;
+}
+
+const { seite, hideTitle = false } = Astro.props;
+---
+
+<article class="prose">
+  {!hideTitle && <h1>{seite.titel}</h1>}
+  <RichText value={seite.body} />
+</article>

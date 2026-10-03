@@ -1,19 +1,19 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Seite from '../storyblok/Seite.astro';
+import SeiteInhalt from '../components/content/SeiteInhalt.astro';
 import NewsCard from '../components/NewsCard.astro';
-import { getHome, getNews } from '../lib/storyblok';
+import { getHome, getNews } from '../lib/sanity';
 
 const [home, news] = await Promise.all([getHome(), getNews(6)]);
 ---
 
 <BaseLayout>
-  {home ? <Seite blok={home.content} hideTitle /> : <h1>EHC Wintistars</h1>}
+  {home ? <SeiteInhalt seite={home} hideTitle /> : <h1>EHC Wintistars</h1>}
 
   <section>
     <h2>News</h2>
     {news.length > 0 ? (
-      <div class="grid">{news.map((story) => <NewsCard story={story} />)}</div>
+      <div class="grid">{news.map((n) => <NewsCard news={n} />)}</div>
     ) : (
       <p class="muted">Noch keine News.</p>
     )}

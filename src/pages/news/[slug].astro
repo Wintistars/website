@@ -1,23 +1,23 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import News from '../../storyblok/News.astro';
-import { getNews } from '../../lib/storyblok';
-import type { NewsStory } from '../../lib/types';
+import NewsArtikel from '../../components/content/NewsArtikel.astro';
+import { getNews } from '../../lib/sanity';
+import type { News } from '../../lib/types';
 
 export const getStaticPaths = (async () => {
   const news = await getNews();
-  return news.map((story) => ({ params: { slug: story.slug }, props: { story } }));
+  return news.map((n) => ({ params: { slug: n.slug }, props: { news: n } }));
 }) satisfies GetStaticPaths;
 
 interface Props {
-  story: NewsStory;
+  news: News;
 }
 
-const { story } = Astro.props;
+const { news } = Astro.props;
 ---
 
-<BaseLayout title={story.content.titel} description={story.content.lead}>
-  <News blok={story.content} />
+<BaseLayout title={news.titel} description={news.lead}>
+  <NewsArtikel news={news} />
   <p><a href="/news/">← Alle News</a></p>
 </BaseLayout>

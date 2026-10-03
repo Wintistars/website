@@ -5,7 +5,9 @@
       "Bash(npm run build)",
       "Bash(npm run dev)",
       "Bash(npx astro check)",
-      "Bash(npx astro check:*)"
+      "Bash(npx astro check:*)",
+      "Bash(npm run studio)",
+      "Bash(npm --prefix studio run check)"
     ],
     "deny": [
       "Read(./.env)",

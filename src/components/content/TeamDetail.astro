@@ -1,0 +1,31 @@
+---
+import type { Team } from '../../lib/types';
+import SanityPicture from '../SanityPicture.astro';
+import SpielerCard from '../SpielerCard.astro';
+import RichText from '../richtext/RichText.astro';
+
+interface Props {
+  team: Team;
+}
+
+const { team } = Astro.props;
+---
+
+<article>
+  {team.kategorie && <p class="muted">{team.kategorie}</p>}
+  <h1>{team.name}</h1>
+  <SanityPicture image={team.teamfoto} ratio={3 / 2} widths={[800, 1200, 1600]} sizes="(min-width: 72rem) 70rem, 100vw" eager />
+  {team.trainer && <p><strong>Trainer:</strong> {team.trainer}</p>}
+  <div class="prose"><RichText value={team.beschreibung} /></div>
+
+  {
+    team.spieler.length > 0 && (
+      <section>
+        <h2>Kader</h2>
+        <div class="grid">
+          {team.spieler.map((s) => <SpielerCard spieler={s} />)}
+        </div>
+      </section>
+    )
+  }
+</article>

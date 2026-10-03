@@ -1,68 +1,63 @@
-// Typen der Storyblok-Komponenten. Muss mit storyblok/components.json übereinstimmen.
-import type { ISbStoryData, StoryblokRichTextInput } from '@storyblok/astro';
+// Typen der Inhalte, wie sie die GROQ-Abfragen in src/lib/sanity.ts liefern.
+// Muss mit dem Schema in studio/schemaTypes/ übereinstimmen.
+import type { PortableTextBlock } from '@portabletext/types';
+import type { SanityImageObject } from '@sanity/image-url';
 
-export interface SbAsset {
-  id: number | null;
-  filename: string | null;
-  alt: string | null;
-  title?: string | null;
-  focus?: string | null;
+export interface SanityImage extends SanityImageObject {
+  alt?: string;
+  /** Per GROQ aus asset->metadata.dimensions ergänzt. */
+  dimensions?: { width: number; height: number; aspectRatio: number };
 }
 
-interface Blok<C extends string> {
-  _uid: string;
-  component: C;
-  _editable?: string;
-}
-
-// --- Content-Typen (eigene Stories) ---
-
-export interface NewsContent extends Blok<'news'> {
-  titel: string;
-  datum: string; // "YYYY-MM-DD HH:mm"
-  lead?: string;
-  bild?: SbAsset;
-  text?: StoryblokRichTextInput;
-}
+/** Rich Text (Portable Text) inkl. eingebetteter Bilder. */
+export type RichText = (PortableTextBlock | (SanityImage & { _type: 'image'; _key: string }))[];
 
 export type SpielerPosition = 'torhueter' | 'verteidiger' | 'sturm';
 
-export interface SpielerContent extends Blok<'spieler'> {
-  name: string;
-  nummer?: string;
-  position?: SpielerPosition | '';
-  jahrgang?: string;
-  portrait?: SbAsset;
-  text?: StoryblokRichTextInput;
-}
-
-export interface TeamContent extends Blok<'team'> {
-  name: string;
-  kategorie?: string;
-  teamfoto?: SbAsset;
-  trainer?: string;
-  beschreibung?: StoryblokRichTextInput;
-  // Mit resolve_relations "team.spieler" aufgelöst; sonst UUID-Strings.
-  spieler?: (SpielerStory | string)[];
-}
-
-export interface SeiteContent extends Blok<'seite'> {
+export interface News {
+  _id: string;
   titel: string;
-  body?: (TextBlok | BildBlok)[];
+  slug: string;
+  datum: string; // YYYY-MM-DD
+  lead?: string;
+  bild?: SanityImage;
+  text?: RichText;
 }
 
-// --- Verschachtelbare Blöcke (innerhalb von "seite") ---
-
-export interface TextBlok extends Blok<'text'> {
-  text?: StoryblokRichTextInput;
+export interface Spieler {
+  _id: string;
+  name: string;
+  slug: string;
+  nummer?: number;
+  position?: SpielerPosition;
+  jahrgang?: number;
+  portrait?: SanityImage;
+  text?: RichText;
 }
 
-export interface BildBlok extends Blok<'bild'> {
-  bild?: SbAsset;
-  legende?: string;
+export interface TeamRef {
+  name: string;
+  slug: string;
 }
 
-export type NewsStory = ISbStoryData<NewsContent>;
-export type SpielerStory = ISbStoryData<SpielerContent>;
-export type TeamStory = ISbStoryData<TeamContent>;
-export type SeiteStory = ISbStoryData<SeiteContent>;
+export interface SpielerMitTeams extends Spieler {
+  teams: TeamRef[];
+}
+
+export interface Team {
+  _id: string;
+  name: string;
+  slug: string;
+  kategorie?: string;
+  teamfoto?: SanityImage;
+  trainer?: string;
+  beschreibung?: RichText;
+  spieler: Spieler[];
+}
+
+export interface Seite {
+  _id: string;
+  titel: string;
+  slug: string;
+  body?: RichText;
+}

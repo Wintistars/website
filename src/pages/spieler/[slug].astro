@@ -1,26 +1,22 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Spieler from '../../storyblok/Spieler.astro';
-import { getSpieler, getTeams, teamsVonSpieler } from '../../lib/storyblok';
-import type { SpielerStory, TeamStory } from '../../lib/types';
+import SpielerProfil from '../../components/content/SpielerProfil.astro';
+import { getSpieler } from '../../lib/sanity';
+import type { SpielerMitTeams } from '../../lib/types';
 
 export const getStaticPaths = (async () => {
-  const [spieler, teams] = await Promise.all([getSpieler(), getTeams()]);
-  return spieler.map((story) => ({
-    params: { slug: story.slug },
-    props: { story, teams: teamsVonSpieler(story, teams) },
-  }));
+  const spieler = await getSpieler();
+  return spieler.map((s) => ({ params: { slug: s.slug }, props: { spieler: s } }));
 }) satisfies GetStaticPaths;
 
 interface Props {
-  story: SpielerStory;
-  teams: TeamStory[];
+  spieler: SpielerMitTeams;
 }
 
-const { story, teams } = Astro.props;
+const { spieler } = Astro.props;
 ---
 
-<BaseLayout title={story.content.name}>
-  <Spieler blok={story.content} teams={teams} />
+<BaseLayout title={spieler.name}>
+  <SpielerProfil spieler={spieler} />
 </BaseLayout>

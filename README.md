@@ -1,33 +1,33 @@
 # EHC Wintistars – Website
 
-Club-Website des EHC Wintistars (Winterthur). Astro (statisch) + Storyblok (CMS).
+Club-Website des EHC Wintistars (Winterthur). Astro (statisch) + Sanity (CMS) + Cloudflare Pages.
 Hintergrund, Entscheide und Status: [docs/projekt.md](docs/projekt.md).
 
 ## Lokal starten
 
 ```bash
-nvm use            # Node 22
+nvm use                     # Node 22
 npm install
-cp .env.example .env   # STORYBLOK_TOKEN (Preview-Token) eintragen
-npm run dev
+npm --prefix studio install
+npm run dev                 # Website: http://localhost:4321
+npm run studio              # Studio:  http://localhost:3333
 ```
 
 ## Befehle
 
 | Befehl | Zweck |
 | --- | --- |
-| `npm run dev` | Dev-Server, zeigt Storyblok-Entwürfe |
-| `npm run build` | Statischer Build nach `dist/` (veröffentlichte Inhalte) |
-| `npm run preview` | Build lokal ansehen |
-| `npm run check` | Typecheck |
+| `npm run dev` | Website lokal |
+| `npm run build` | Statischer Build nach `dist/` |
+| `npm run check` | Typecheck Website |
+| `npm run studio` | Sanity Studio lokal |
+| `npm run studio:deploy` | Studio nach wintistars.sanity.studio veröffentlichen |
 
 ## Deployment
 
-Hosting (Cloudflare Pages oder Netlify): Build-Befehl `npm run build`, Output `dist`,
-Umgebungsvariable `STORYBLOK_TOKEN` (Public-Token). Der Storyblok-Webhook «Story published»
-ruft den Deploy-Hook des Hostings auf, damit veröffentlichte Inhalte automatisch live gehen.
+Cloudflare Pages: Framework «Astro», Build-Befehl `npm run build`, Output `dist`. Keine Umgebungsvariablen nötig.
+Ein Sanity-Webhook ruft beim Veröffentlichen den Deploy-Hook von Cloudflare auf.
 
 ## Content-Modell
 
-Siehe [storyblok/components.json](storyblok/components.json). Ordner in Storyblok:
-`news/`, `teams/`, `spieler/`; allgemeine Seiten im Root, Startseite = Story `home`.
+Siehe [studio/schemaTypes/](studio/schemaTypes/). Die Startseite zeigt die Seite mit der Adresse `home`.

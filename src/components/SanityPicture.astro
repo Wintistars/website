@@ -1,10 +1,10 @@
 ---
-// Responsives Bild aus Storyblok, optimiert über das Storyblok-Bild-CDN.
-import type { SbAsset } from '../lib/types';
-import { sbImage, sbSrcset } from '../lib/image';
+// Responsives Bild aus Sanity, optimiert über das Sanity-Bild-CDN.
+import type { SanityImage } from '../lib/types';
+import { imageSrcset, imageUrl } from '../lib/image';
 
 interface Props {
-  asset?: SbAsset | null;
+  image?: SanityImage | null;
   /** Breite / Höhe, z. B. 16/9. Ohne Angabe: Originalverhältnis. */
   ratio?: number;
   widths?: number[];
@@ -15,7 +15,7 @@ interface Props {
 }
 
 const {
-  asset,
+  image,
   ratio,
   widths = [400, 800, 1200, 1600],
   sizes = '100vw',
@@ -25,18 +25,18 @@ const {
 } = Astro.props;
 
 const maxW = Math.max(...widths);
-const src = sbImage(asset, { width: maxW, height: ratio ? Math.round(maxW / ratio) : 0 });
+const aspect = ratio ?? image?.dimensions?.aspectRatio;
 ---
 
 {
-  src && (
+  image?.asset && (
     <img
-      src={src}
-      srcset={sbSrcset(asset, widths, ratio)}
+      src={imageUrl(image, maxW, ratio ? Math.round(maxW / ratio) : undefined)}
+      srcset={imageSrcset(image, widths, ratio)}
       sizes={sizes}
-      alt={alt ?? asset?.alt ?? ''}
+      alt={alt ?? image.alt ?? ''}
       width={maxW}
-      height={ratio ? Math.round(maxW / ratio) : undefined}
+      height={aspect ? Math.round(maxW / aspect) : undefined}
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
       class={className}

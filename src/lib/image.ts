@@ -1,25 +1,17 @@
-// Bildoptimierung über das Storyblok-Bild-CDN (https://www.storyblok.com/docs/api/image-service).
-import type { SbAsset } from './types';
+// Bildoptimierung über das Sanity-Bild-CDN (https://www.sanity.io/docs/image-urls).
+import { createImageUrlBuilder } from '@sanity/image-url';
+import { SANITY_DATASET, SANITY_PROJECT_ID } from './sanity';
+import type { SanityImage } from './types';
 
-export interface SbImageOptions {
-  width?: number;
-  height?: number;
-  quality?: number;
+const builder = createImageUrlBuilder({ projectId: SANITY_PROJECT_ID, dataset: SANITY_DATASET });
+
+/** URL in gewünschter Breite; mit Höhe wird unter Beachtung des Hotspots zugeschnitten. */
+export function imageUrl(img: SanityImage, width: number, height?: number): string {
+  let b = builder.image(img).width(width).auto('format').quality(80);
+  if (height) b = b.height(height).fit('crop');
+  return b.url();
 }
 
-/** URL eines Storyblok-Assets in gewünschter Grösse, als WebP und mit Fokuspunkt. */
-export function sbImage(asset: SbAsset | undefined | null, opts: SbImageOptions = {}): string | null {
-  if (!asset?.filename) return null;
-  const { width = 0, height = 0, quality = 80 } = opts;
-  const filters = [`format(webp)`, `quality(${quality})`];
-  if (asset.focus) filters.push(`focal(${asset.focus})`);
-  return `${asset.filename}/m/${width}x${height}/filters:${filters.join(':')}`;
-}
-
-/** srcset für responsive Bilder; Höhe wird über das Seitenverhältnis mitskaliert. */
-export function sbSrcset(asset: SbAsset | undefined | null, widths: number[], ratio?: number): string | undefined {
-  if (!asset?.filename) return undefined;
-  return widths
-    .map((w) => `${sbImage(asset, { width: w, height: ratio ? Math.round(w / ratio) : 0 })} ${w}w`)
-    .join(', ');
+export function imageSrcset(img: SanityImage, widths: number[], ratio?: number): string {
+  return widths.map((w) => `${imageUrl(img, w, ratio ? Math.round(w / ratio) : undefined)} ${w}w`).join(', ');
 }

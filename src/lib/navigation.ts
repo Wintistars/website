@@ -1,4 +1,4 @@
-// Hauptnavigation. Allgemeine Seiten (Club, Kontakt …) sind Storyblok-Stories vom Typ "seite".
+// Hauptnavigation. Allgemeine Seiten (Club, Kontakt …) sind Sanity-Dokumente vom Typ "seite".
 export const NAVIGATION = [
   { label: 'News', href: '/news/' },
   { label: 'Teams', href: '/teams/' },

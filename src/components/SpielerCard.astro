@@ -1,23 +1,22 @@
 ---
-import type { SpielerStory } from '../lib/types';
+import type { Spieler } from '../lib/types';
 import { POSITION_LABEL } from '../lib/format';
-import SbPicture from './SbPicture.astro';
+import SanityPicture from './SanityPicture.astro';
 
 interface Props {
-  story: SpielerStory;
+  spieler: Spieler;
 }
 
-const { story } = Astro.props;
-const { name, nummer, position, portrait } = story.content;
+const { spieler } = Astro.props;
 ---
 
 <article class="card">
-  <a href={`/${story.full_slug}/`}>
-    <SbPicture asset={portrait} ratio={3 / 4} widths={[300, 600]} sizes="(min-width: 64rem) 16rem, 50vw" alt={name} />
+  <a href={`/spieler/${spieler.slug}/`}>
+    <SanityPicture image={spieler.portrait} ratio={3 / 4} widths={[300, 600]} sizes="(min-width: 64rem) 16rem, 50vw" alt={spieler.name} />
     <div class="body">
-      {nummer && <span class="nummer">#{nummer}</span>}
-      <h3>{name}</h3>
-      {position && <p class="muted">{POSITION_LABEL[position]}</p>}
+      {spieler.nummer != null && <span class="nummer">#{spieler.nummer}</span>}
+      <h3>{spieler.name}</h3>
+      {spieler.position && <p class="muted">{POSITION_LABEL[spieler.position]}</p>}
     </div>
   </a>
 </article>

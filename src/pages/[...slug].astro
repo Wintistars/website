@@ -1,23 +1,23 @@
 ---
-// Allgemeine Seiten (Club, Kontakt, …): alle Stories vom Typ "seite" ausser "home".
+// Allgemeine Seiten (Club, Kontakt, …): alle Dokumente vom Typ "seite" ausser "home".
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Seite from '../storyblok/Seite.astro';
-import { getSeiten } from '../lib/storyblok';
-import type { SeiteStory } from '../lib/types';
+import SeiteInhalt from '../components/content/SeiteInhalt.astro';
+import { getSeiten } from '../lib/sanity';
+import type { Seite } from '../lib/types';
 
 export const getStaticPaths = (async () => {
   const seiten = await getSeiten();
-  return seiten.map((story) => ({ params: { slug: story.full_slug.replace(/\/$/, '') }, props: { story } }));
+  return seiten.map((seite) => ({ params: { slug: seite.slug }, props: { seite } }));
 }) satisfies GetStaticPaths;
 
 interface Props {
-  story: SeiteStory;
+  seite: Seite;
 }
 
-const { story } = Astro.props;
+const { seite } = Astro.props;
 ---
 
-<BaseLayout title={story.content.titel}>
-  <Seite blok={story.content} />
+<BaseLayout title={seite.titel}>
+  <SeiteInhalt seite={seite} />
 </BaseLayout>
