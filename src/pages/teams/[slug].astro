@@ -1,0 +1,22 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Team from '../../storyblok/Team.astro';
+import { getTeams } from '../../lib/storyblok';
+import type { TeamStory } from '../../lib/types';
+
+export const getStaticPaths = (async () => {
+  const teams = await getTeams();
+  return teams.map((story) => ({ params: { slug: story.slug }, props: { story } }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  story: TeamStory;
+}
+
+const { story } = Astro.props;
+---
+
+<BaseLayout title={story.content.name}>
+  <Team blok={story.content} />
+</BaseLayout>

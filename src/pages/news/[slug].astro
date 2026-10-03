@@ -1,0 +1,23 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import News from '../../storyblok/News.astro';
+import { getNews } from '../../lib/storyblok';
+import type { NewsStory } from '../../lib/types';
+
+export const getStaticPaths = (async () => {
+  const news = await getNews();
+  return news.map((story) => ({ params: { slug: story.slug }, props: { story } }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  story: NewsStory;
+}
+
+const { story } = Astro.props;
+---
+
+<BaseLayout title={story.content.titel} description={story.content.lead}>
+  <News blok={story.content} />
+  <p><a href="/news/">← Alle News</a></p>
+</BaseLayout>

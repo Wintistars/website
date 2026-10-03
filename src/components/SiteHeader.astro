@@ -1,0 +1,61 @@
+---
+import { NAVIGATION } from '../lib/navigation';
+
+const current = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="container inner">
+    <!-- TODO: Original-Logo als SVG einsetzen (public/logo.svg), sobald die Vektordatei vorliegt. -->
+    <a href="/" class="brand">EHC Wintistars</a>
+    <nav aria-label="Hauptnavigation">
+      <ul>
+        {
+          NAVIGATION.map((item) => (
+            <li>
+              <a href={item.href} aria-current={current.startsWith(item.href) ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    background: var(--c-primary);
+    color: var(--c-primary-contrast);
+  }
+  .inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    padding-block: 1rem;
+  }
+  .brand {
+    font-weight: 800;
+    font-size: 1.25rem;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  nav a {
+    text-decoration: none;
+    font-weight: 600;
+  }
+  nav a[aria-current='page'] {
+    color: var(--c-accent);
+  }
+</style>

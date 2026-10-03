@@ -1,0 +1,48 @@
+---
+import type { SpielerStory } from '../lib/types';
+import { POSITION_LABEL } from '../lib/format';
+import SbPicture from './SbPicture.astro';
+
+interface Props {
+  story: SpielerStory;
+}
+
+const { story } = Astro.props;
+const { name, nummer, position, portrait } = story.content;
+---
+
+<article class="card">
+  <a href={`/${story.full_slug}/`}>
+    <SbPicture asset={portrait} ratio={3 / 4} widths={[300, 600]} sizes="(min-width: 64rem) 16rem, 50vw" alt={name} />
+    <div class="body">
+      {nummer && <span class="nummer">#{nummer}</span>}
+      <h3>{name}</h3>
+      {position && <p class="muted">{POSITION_LABEL[position]}</p>}
+    </div>
+  </a>
+</article>
+
+<style>
+  .card {
+    background: var(--c-surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  a {
+    text-decoration: none;
+    display: block;
+  }
+  .body {
+    padding: 0.75rem 1rem 1rem;
+  }
+  .nummer {
+    font-weight: 800;
+    color: var(--c-accent);
+  }
+  h3 {
+    margin: 0.1rem 0;
+  }
+  p {
+    margin: 0;
+  }
+</style>

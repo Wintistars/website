@@ -1,0 +1,95 @@
+{
+  "$comment": "Storyblok-Komponenten (Format der Management API). Quelle der Wahrheit für das Content-Modell; muss mit src/lib/types.ts und src/storyblok/*.astro übereinstimmen.",
+  "components": [
+    {
+      "name": "news",
+      "display_name": "News",
+      "is_root": true,
+      "is_nestable": false,
+      "schema": {
+        "titel": { "type": "text", "pos": 0, "required": true },
+        "datum": { "type": "datetime", "pos": 1, "required": true, "disable_time": true },
+        "lead": { "type": "textarea", "pos": 2, "description": "Kurzer Anriss für Übersicht und Suchmaschinen (1–2 Sätze)" },
+        "bild": { "type": "asset", "pos": 3, "filetypes": ["images"] },
+        "text": { "type": "richtext", "pos": 4 }
+      }
+    },
+    {
+      "name": "spieler",
+      "display_name": "Spieler",
+      "is_root": true,
+      "is_nestable": false,
+      "schema": {
+        "name": { "type": "text", "pos": 0, "required": true },
+        "nummer": { "type": "number", "pos": 1 },
+        "position": {
+          "type": "option",
+          "pos": 2,
+          "options": [
+            { "name": "Torhüter", "value": "torhueter" },
+            { "name": "Verteidiger", "value": "verteidiger" },
+            { "name": "Sturm", "value": "sturm" }
+          ]
+        },
+        "jahrgang": { "type": "number", "pos": 3 },
+        "portrait": { "type": "asset", "pos": 4, "filetypes": ["images"] },
+        "text": { "type": "richtext", "pos": 5 }
+      }
+    },
+    {
+      "name": "team",
+      "display_name": "Team",
+      "is_root": true,
+      "is_nestable": false,
+      "schema": {
+        "name": { "type": "text", "pos": 0, "required": true },
+        "kategorie": { "type": "text", "pos": 1, "description": "z. B. «1. Mannschaft», «U15»" },
+        "teamfoto": { "type": "asset", "pos": 2, "filetypes": ["images"] },
+        "trainer": { "type": "text", "pos": 3 },
+        "beschreibung": { "type": "richtext", "pos": 4 },
+        "spieler": {
+          "type": "options",
+          "pos": 5,
+          "source": "internal_stories",
+          "folder_slug": "spieler/",
+          "filter_content_type": ["spieler"],
+          "description": "Kader in Anzeigereihenfolge"
+        }
+      }
+    },
+    {
+      "name": "seite",
+      "display_name": "Seite",
+      "is_root": true,
+      "is_nestable": false,
+      "schema": {
+        "titel": { "type": "text", "pos": 0, "required": true },
+        "body": {
+          "type": "bloks",
+          "pos": 1,
+          "restrict_components": true,
+          "component_whitelist": ["text", "bild"]
+        }
+      }
+    },
+    {
+      "name": "text",
+      "display_name": "Text",
+      "is_root": false,
+      "is_nestable": true,
+      "schema": {
+        "text": { "type": "richtext", "pos": 0 }
+      }
+    },
+    {
+      "name": "bild",
+      "display_name": "Bild",
+      "is_root": false,
+      "is_nestable": true,
+      "schema": {
+        "bild": { "type": "asset", "pos": 0, "filetypes": ["images"], "required": true },
+        "legende": { "type": "text", "pos": 1 }
+      }
+    }
+  ]
+}

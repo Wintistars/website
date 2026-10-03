@@ -1,0 +1,28 @@
+---
+import { storyblokEditable } from '@storyblok/astro';
+import StoryblokRichText from '@storyblok/astro/StoryblokRichText.astro';
+import type { NewsContent } from '../lib/types';
+import { formatDatum } from '../lib/format';
+import SbPicture from '../components/SbPicture.astro';
+
+interface Props {
+  blok: NewsContent;
+}
+
+const { blok } = Astro.props;
+---
+
+<article {...storyblokEditable(blok)} class="prose">
+  {blok.datum && <time datetime={blok.datum.replace(' ', 'T')} class="muted">{formatDatum(blok.datum)}</time>}
+  <h1>{blok.titel}</h1>
+  {blok.lead && <p class="lead">{blok.lead}</p>}
+  <SbPicture asset={blok.bild} widths={[600, 1000, 1400]} sizes="(min-width: 48rem) 45rem, 100vw" eager />
+  {blok.text && <StoryblokRichText document={blok.text} />}
+</article>
+
+<style>
+  .lead {
+    font-size: 1.2rem;
+    font-weight: 500;
+  }
+</style>

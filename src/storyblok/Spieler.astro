@@ -1,0 +1,65 @@
+---
+import { storyblokEditable } from '@storyblok/astro';
+import StoryblokRichText from '@storyblok/astro/StoryblokRichText.astro';
+import type { SpielerContent, TeamStory } from '../lib/types';
+import { POSITION_LABEL } from '../lib/format';
+import SbPicture from '../components/SbPicture.astro';
+
+interface Props {
+  blok: SpielerContent;
+  teams?: TeamStory[];
+}
+
+const { blok, teams = [] } = Astro.props;
+---
+
+<article {...storyblokEditable(blok)} class="spieler">
+  <SbPicture asset={blok.portrait} ratio={3 / 4} widths={[400, 800]} sizes="(min-width: 48rem) 20rem, 100vw" alt={blok.name} eager />
+  <div>
+    {blok.nummer && <p class="nummer">#{blok.nummer}</p>}
+    <h1>{blok.name}</h1>
+    <dl>
+      {blok.position && (<><dt>Position</dt><dd>{POSITION_LABEL[blok.position]}</dd></>)}
+      {blok.jahrgang && (<><dt>Jahrgang</dt><dd>{blok.jahrgang}</dd></>)}
+      {teams.length > 0 && (
+        <>
+          <dt>Team</dt>
+          <dd>{teams.map((t, i) => (<>{i > 0 && ', '}<a href={`/${t.full_slug}/`}>{t.content.name}</a></>))}</dd>
+        </>
+      )}
+    </dl>
+    {blok.text && <div class="prose"><StoryblokRichText document={blok.text} /></div>}
+  </div>
+</article>
+
+<style>
+  .spieler {
+    display: grid;
+    gap: 2rem;
+  }
+  @media (min-width: 48rem) {
+    .spieler {
+      grid-template-columns: 20rem 1fr;
+    }
+  }
+  .nummer {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--c-accent);
+    margin: 0;
+  }
+  h1 {
+    margin-top: 0;
+  }
+  dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25rem 1rem;
+  }
+  dt {
+    font-weight: 600;
+  }
+  dd {
+    margin: 0;
+  }
+</style>

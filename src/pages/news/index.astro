@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NewsCard from '../../components/NewsCard.astro';
+import { getNews } from '../../lib/storyblok';
+
+const news = await getNews();
+---
+
+<BaseLayout title="News">
+  <h1>News</h1>
+  <div class="grid">{news.map((story) => <NewsCard story={story} />)}</div>
+</BaseLayout>

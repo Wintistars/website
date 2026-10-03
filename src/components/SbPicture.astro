@@ -1,0 +1,46 @@
+---
+// Responsives Bild aus Storyblok, optimiert über das Storyblok-Bild-CDN.
+import type { SbAsset } from '../lib/types';
+import { sbImage, sbSrcset } from '../lib/image';
+
+interface Props {
+  asset?: SbAsset | null;
+  /** Breite / Höhe, z. B. 16/9. Ohne Angabe: Originalverhältnis. */
+  ratio?: number;
+  widths?: number[];
+  sizes?: string;
+  alt?: string;
+  eager?: boolean;
+  class?: string;
+}
+
+const {
+  asset,
+  ratio,
+  widths = [400, 800, 1200, 1600],
+  sizes = '100vw',
+  alt,
+  eager = false,
+  class: className,
+} = Astro.props;
+
+const maxW = Math.max(...widths);
+const src = sbImage(asset, { width: maxW, height: ratio ? Math.round(maxW / ratio) : 0 });
+---
+
+{
+  src && (
+    <img
+      src={src}
+      srcset={sbSrcset(asset, widths, ratio)}
+      sizes={sizes}
+      alt={alt ?? asset?.alt ?? ''}
+      width={maxW}
+      height={ratio ? Math.round(maxW / ratio) : undefined}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      class={className}
+      style={ratio ? `aspect-ratio: ${ratio}; object-fit: cover;` : undefined}
+    />
+  )
+}

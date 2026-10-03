@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SbPicture from '../../components/SbPicture.astro';
+import { getTeams } from '../../lib/storyblok';
+
+const teams = await getTeams();
+---
+
+<BaseLayout title="Teams">
+  <h1>Teams</h1>
+  <div class="grid">
+    {
+      teams.map((team) => (
+        <a href={`/${team.full_slug}/`} class="team">
+          <SbPicture asset={team.content.teamfoto} ratio={3 / 2} widths={[400, 800]} sizes="(min-width: 64rem) 22rem, 100vw" />
+          <h2>{team.content.name}</h2>
+          {team.content.kategorie && <p class="muted">{team.content.kategorie}</p>}
+        </a>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .team {
+    text-decoration: none;
+    background: var(--c-surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    padding-bottom: 1rem;
+  }
+  .team h2,
+  .team p {
+    margin: 0.5rem 1rem 0;
+  }
+</style>

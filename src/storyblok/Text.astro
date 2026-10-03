@@ -1,0 +1,15 @@
+---
+import { storyblokEditable } from '@storyblok/astro';
+import StoryblokRichText from '@storyblok/astro/StoryblokRichText.astro';
+import type { TextBlok } from '../lib/types';
+
+interface Props {
+  blok: TextBlok;
+}
+
+const { blok } = Astro.props;
+---
+
+<div {...storyblokEditable(blok)}>
+  {blok.text && <StoryblokRichText document={blok.text} />}
+</div>

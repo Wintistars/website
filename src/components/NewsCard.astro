@@ -1,0 +1,48 @@
+---
+import type { NewsStory } from '../lib/types';
+import { formatDatum } from '../lib/format';
+import SbPicture from './SbPicture.astro';
+
+interface Props {
+  story: NewsStory;
+}
+
+const { story } = Astro.props;
+const { titel, datum, lead, bild } = story.content;
+---
+
+<article class="card">
+  <a href={`/${story.full_slug}/`}>
+    <SbPicture asset={bild} ratio={16 / 9} widths={[400, 800]} sizes="(min-width: 64rem) 22rem, 100vw" />
+    <div class="body">
+      {datum && <time datetime={datum.replace(' ', 'T')} class="muted">{formatDatum(datum)}</time>}
+      <h3>{titel}</h3>
+      {lead && <p>{lead}</p>}
+    </div>
+  </a>
+</article>
+
+<style>
+  .card {
+    background: var(--c-surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  a {
+    text-decoration: none;
+    display: block;
+    height: 100%;
+  }
+  .body {
+    padding: 1rem;
+  }
+  h3 {
+    margin: 0.25rem 0 0.5rem;
+  }
+  p {
+    margin: 0;
+  }
+  time {
+    font-size: 0.85rem;
+  }
+</style>
