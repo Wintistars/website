@@ -1,0 +1,118 @@
+---
+import { ART_LABEL, type Spiel } from '../lib/spielplan';
+import { formatSpieltag, formatUhrzeit } from '../lib/zeit';
+
+interface Props {
+  spiel: Spiel;
+  /** Team anzeigen, wenn mehrere Teams im Spielplan stehen. */
+  zeigeTeam?: boolean;
+}
+
+const { spiel, zeigeTeam = false } = Astro.props;
+const { resultat } = spiel;
+---
+
+<li class:list={['spiel', { abgesagt: spiel.hinweis === 'Abgesagt' }]}>
+  <time datetime={spiel.beginn.toISOString()} class="wann">
+    <span>{formatSpieltag(spiel.beginn)}</span>
+    <span class="muted">{formatUhrzeit(spiel.beginn)} Uhr</span>
+  </time>
+
+  <div class="begegnung">
+    <span class:list={['team', { wir: spiel.heim === spiel.team.name }]}>{spiel.heim}</span>
+    <span class="resultat" aria-label={resultat ? `Resultat ${resultat.heim} zu ${resultat.gast}` : undefined}>
+      {resultat ? `${resultat.heim}:${resultat.gast}` : '–'}
+      {resultat && spiel.zusatz && <small>{spiel.zusatz}</small>}
+    </span>
+    <span class:list={['team', { wir: spiel.gast === spiel.team.name }]}>{spiel.gast}</span>
+  </div>
+
+  <div class="info muted">
+    <span class:list={['art', spiel.art]}>{ART_LABEL[spiel.art]}</span>
+    {spiel.hinweis && <span class="hinweis">{spiel.hinweis}</span>}
+    {zeigeTeam && <span>{spiel.team.name}</span>}
+    {spiel.ort && <span>{spiel.ort}</span>}
+    {spiel.bemerkung && <span>{spiel.bemerkung}</span>}
+    {
+      spiel.link && (
+        <a href={spiel.link} rel="noopener" target="_blank">
+          Matchblatt<span class="visually-hidden"> bei Swiss Ice Hockey (öffnet neues Fenster)</span>
+        </a>
+      )
+    }
+  </div>
+</li>
+
+<style>
+  .spiel {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: 0.25rem 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--c-border);
+  }
+  .wann {
+    display: flex;
+    flex-direction: column;
+    font-variant-numeric: tabular-nums;
+  }
+  .begegnung {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+  .team:first-child {
+    text-align: right;
+  }
+  .wir {
+    font-weight: 700;
+  }
+  .resultat {
+    min-width: 3.5rem;
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .resultat small {
+    display: block;
+    font-weight: 400;
+    font-size: 0.75rem;
+  }
+  .info {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  .art {
+    padding: 0 0.4rem;
+    border-radius: var(--radius);
+    background: var(--c-surface);
+    color: var(--c-text);
+  }
+  .art.meisterschaft {
+    background: var(--c-primary);
+    color: var(--c-primary-contrast);
+  }
+  .hinweis {
+    color: var(--c-text);
+    font-weight: 700;
+  }
+  .abgesagt .begegnung {
+    text-decoration: line-through;
+  }
+  @media (max-width: 40rem) {
+    .spiel {
+      grid-template-columns: 1fr;
+    }
+    .wann {
+      flex-direction: row;
+      gap: 0.5rem;
+    }
+    .info {
+      grid-column: 1;
+    }
+  }
+</style>

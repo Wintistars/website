@@ -14,6 +14,8 @@ export type RichText = (PortableTextBlock | (SanityImage & { _type: 'image'; _ke
 
 export type SpielerPosition = 'torhueter' | 'verteidiger' | 'sturm';
 
+export type SpielArt = 'plausch' | 'turnier' | 'cup' | 'anderes';
+
 export interface News {
   _id: string;
   titel: string;
@@ -51,6 +53,8 @@ export interface Team {
   kategorie?: string;
   teamfoto?: SanityImage;
   trainer?: string;
+  /** Link zur Teamseite im SIHF Game Center (Quelle für Meisterschaftsspiele). */
+  sihfUrl?: string;
   beschreibung?: RichText;
   spieler: Spieler[];
 }
@@ -60,4 +64,27 @@ export interface Seite {
   titel: string;
   slug: string;
   body?: RichText;
+}
+
+/** Manuell erfasstes Spiel (Plausch/Turnier), Typ `spiel`. */
+export interface SanitySpiel {
+  _id: string;
+  beginn: string; // ISO-Datetime (UTC)
+  ende?: string;
+  team: TeamRef;
+  gegner: string;
+  heimspiel: boolean;
+  ort?: string;
+  art: SpielArt;
+  toreTeam?: number;
+  toreGegner?: number;
+  abgesagt: boolean;
+  bemerkung?: string;
+}
+
+/** Team mit hinterlegtem SIHF-Link (Quelle für Meisterschaftsspiele). */
+export interface SihfQuelle {
+  name: string;
+  slug: string;
+  sihfUrl: string;
 }

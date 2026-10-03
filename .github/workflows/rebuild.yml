@@ -1,0 +1,24 @@
+# Baut die Website regelmässig neu, damit Spielplan und Resultate von Swiss Ice Hockey aktuell sind.
+# (Änderungen in Sanity lösen den Build direkt per Webhook aus; die SIHF kann das nicht.)
+# Secret CLOUDFLARE_DEPLOY_HOOK = Deploy-Hook «sanity-publish» aus Cloudflare Pages → wintistars → Settings → Builds.
+name: Rebuild (Spielplan)
+
+on:
+  schedule:
+    # Zeiten in UTC. Täglich am Morgen, zusätzlich nach den Spielen am Montagabend (bis ca. 23:30 Schweizer Zeit).
+    - cron: '0 4 * * *'
+    - cron: '45 22 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cloudflare-Build auslösen
+        env:
+          HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "::error::Secret CLOUDFLARE_DEPLOY_HOOK fehlt"; exit 1; fi
+          curl --fail --silent --show-error -X POST "$HOOK" > /dev/null

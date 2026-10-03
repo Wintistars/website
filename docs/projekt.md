@@ -30,10 +30,11 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 | Framework | Astro, Static Site Generation, TypeScript strict | Schnell, wenig JS. Ursprünglich Angular geplant; Angular-Komponenten wären als Astro-Islands möglich. |
 | CMS | **Sanity** (Free-Plan), Studio unter `studio/`, gehostet auf `wintistars.sanity.studio` | Gratis bis 20 Benutzer, Bild-CDN, Schema im Code. Storyblok verworfen (2026-10-03): Free nur 1 Benutzer, ab 5 Benutzern $99/Monat. |
 | Sanity-Projekt | Projekt-ID `j2uq9efj`, Dataset `production` (öffentlich), Organisation `ofwcx1pff` | Öffentliches Dataset: Build braucht keinen Token; Entwürfe bleiben privat. |
-| Content-Typen | `news`, `spieler`, `team`, `seite` | Schema in `studio/schemaTypes/`. Startseite = `seite` mit Adresse `home`. |
+| Content-Typen | `news`, `spieler`, `team`, `seite`, `spiel` | Schema in `studio/schemaTypes/`. Startseite = `seite` mit Adresse `home`. |
 | Code | GitHub-Repo <https://github.com/Wintistars/website> (Organisation «Wintistars»), `main` geschützt, Pull Requests | |
 | Hosting | **Cloudflare Pages** (Free) – Build `npm run build`, Output `dist` | 500 Builds/Monat. Netlify Free verworfen (nur ca. 20 Deploys/Monat), Vercel Hobby verbietet kommerzielle Nutzung (Sponsoren). |
 | Rebuild | Sanity-Webhook (create/update/delete) → Deploy-Hook von Cloudflare Pages | Inhalte gehen ohne Entwickler live. |
+| Spielplan | Meisterschaft automatisch aus dem CSV-Export des SIHF Game Centers (beim Build, `src/lib/sihf.ts`), Plausch-/Turnierspiele als Sanity-Typ `spiel`; täglicher Rebuild per GitHub Action | Kein Abtippen. Export ist nicht offiziell dokumentiert: Fällt er aus, fehlen nur die Meisterschaftsspiele (Warnung im Build-Log). Zusätzlich Kalender-Abo `/spielplan.ics`. |
 | Bilder | Sanity-Bild-CDN (`src/lib/image.ts`, `SanityPicture`) | Keine Bilder im Repo; Grössen/Formate on the fly, Hotspot-Zuschnitt. |
 | Firebase | Bewusst **nicht** gewählt | Kein Bedarf an Login oder Echtzeitdaten. |
 
@@ -76,7 +77,9 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 
 ## Offene Punkte
 
-- Spielplan: gibt es eine nutzbare Datenquelle von Swiss Ice Hockey (API/Export)? Bis dahin Platzhalter `/spielplan/`.
+- Spielplan-Rebuild: Secret `CLOUDFLARE_DEPLOY_HOOK` im GitHub-Repo setzen (Wert = Deploy-Hook `sanity-publish`),
+  sonst schlägt `.github/workflows/rebuild.yml` fehl. GitHub pausiert geplante Workflows nach 60 Tagen ohne Commits.
+- Spielplan: SIHF-Link beim Team im Studio eintragen (`https://www.sihf.ch/de/game-center/team/109-2-710048`).
 - Logo als Vektordatei beschaffen (Original), danach Farben/Design-Tokens in `src/styles/global.css` festlegen.
 - Live-Vorschau von Entwürfen (Sanity Presentation/Visual Editing): braucht eine SSR-Vorschau-Umgebung. Noch nicht eingerichtet.
 - DNS-Zugriff für wintistars.ch klären.

@@ -20,16 +20,17 @@ Es gibt keine Secrets: Das Dataset ist öffentlich, Projekt-ID/Dataset stehen in
 ## Struktur
 
 - `studio/schemaTypes/` – Content-Modell (Quelle der Wahrheit); `fields.ts` = gemeinsame Felder (Bild, Rich Text, Slug)
-- `src/lib/sanity.ts` – Sanity-Client und alle GROQ-Abfragen (`getNews`, `getTeams`, `getSpieler`, `getSeiten`, `getHome`)
+- `src/lib/sanity.ts` – Sanity-Client und alle GROQ-Abfragen (`getNews`, `getTeams`, `getSpieler`, `getSeiten`, `getHome`, `getSpiele`, `getSihfQuellen`)
+- `src/lib/sihf.ts` + `src/lib/spielplan.ts` – Spielplan: SIHF-Export (Meisterschaft) + Sanity-Spiele; Zeiten immer über `src/lib/zeit.ts` (Europe/Zurich)
 - `src/lib/types.ts` – TS-Typen passend zu den GROQ-Projektionen
 - `src/lib/image.ts` + `src/components/SanityPicture.astro` – Bilder über das Sanity-Bild-CDN
 - `src/components/richtext/` – Portable Text (Rich Text) inkl. Bildern
 - `src/components/content/` – Darstellung je Dokumenttyp
-- `src/pages/` – Routen: `/`, `/news/[slug]`, `/teams/[slug]`, `/spieler/[slug]`, `/spielplan`, `/[...slug]` (Typ `seite`)
+- `src/pages/` – Routen: `/`, `/news/[slug]`, `/teams/[slug]`, `/spieler/[slug]`, `/spielplan`, `/spielplan.ics`, `/[...slug]` (Typ `seite`)
 
 ## Konventionen
 
-- Dokumenttypen: `news`, `spieler`, `team`, `seite`. Startseite = `seite` mit Slug `home`.
+- Dokumenttypen: `news`, `spieler`, `team`, `seite`, `spiel` (nur Plausch/Turnier; Meisterschaft kommt über `team.sihfUrl`). Startseite = `seite` mit Slug `home`.
   Navigation (`src/lib/navigation.ts`) verlinkt `/club/` und `/kontakt/` → dafür braucht es Seiten mit diesen Slugs.
 - Team → Spieler ist ein Referenz-Array (`team.spieler`, Reihenfolge = Kader-Reihenfolge).
 - Änderung am Content-Modell immer synchron in Schema, GROQ, Typen und Komponenten → Subagent `sanity-schema`.

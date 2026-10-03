@@ -8,6 +8,13 @@ export const structure: StructureResolver = (S) =>
       S.documentTypeListItem('news').title('News'),
       S.documentTypeListItem('team').title('Teams'),
       S.documentTypeListItem('spieler').title('Spieler'),
+      S.documentTypeListItem('spiel')
+        .title('Spiele (Plausch/Turnier)')
+        .child(
+          S.documentTypeList('spiel')
+            .title('Spiele (Plausch/Turnier)')
+            .defaultOrdering([{ field: 'beginn', direction: 'desc' }]),
+        ),
       S.divider(),
       S.documentTypeListItem('seite').title('Seiten'),
     ]);
