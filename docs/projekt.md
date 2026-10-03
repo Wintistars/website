@@ -55,6 +55,20 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 | Cloudflare | Persönliches Konto Yves, Pages-Projekt `wintistars` | Später Club-Konto oder zweites Mitglied |
 | Domain wintistars.ch | Inhaber unklar | Sollte auf den Club laufen; vor dem Umhängen klären |
 
+### Tokens / Secrets
+
+Werte stehen nie im Repo. Website-Build und `npm run dev` brauchen keine davon.
+
+| Name | Wo gespeichert | Rechte | Wofür |
+| --- | --- | --- | --- |
+| `SANITY_AUTH_TOKEN` (Token «Lokal – Yves») | Lokal in `.env` im Repo-Root (Vorlage `.env.example`, `.env` ist in `.gitignore`) | Alle Rollen | Lokale Skripte/CLI, z. B. Inhalte per Skript anlegen oder importieren: `set -a; source .env; set +a` |
+| `SANITY_AUTH_TOKEN` (Token «GitHub Actions – Studio deploy») | GitHub → Repo-Secrets | Nur «Deploy Studio» | `.github/workflows/studio-deploy.yml` |
+| `CLOUDFLARE_DEPLOY_HOOK` | GitHub → Repo-Secrets | Löst nur einen Build aus | `.github/workflows/rebuild.yml` (täglicher Spielplan-Rebuild) |
+| Sanity-Webhook «Cloudflare Rebuild» | sanity.io/manage → API → Webhooks | – | Rebuild bei Veröffentlichung im Studio |
+
+Tokens verwalten/widerrufen: sanity.io/manage → Wintistars → API → Tokens. Den lokalen Token mit allen Rollen nie als
+GitHub-Secret verwenden. Claude Code hat per Einstellung keinen Zugriff auf `.env`.
+
 ## Vorgehen / Status
 
 1. [x] Astro-Projekt anlegen (Grundgerüst, Content-Typen, Seitenstruktur)
@@ -77,6 +91,8 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 
 ## Offene Punkte
 
+- Studio-Deploy per GitHub Action: Secret `SANITY_AUTH_TOKEN` setzen (Token mit Rolle «Deploy Studio»,
+  sanity.io/manage → API → Tokens), sonst schlägt `.github/workflows/studio-deploy.yml` fehl.
 - Spielplan-Rebuild: Secret `CLOUDFLARE_DEPLOY_HOOK` im GitHub-Repo setzen (Wert = Deploy-Hook `sanity-publish`),
   sonst schlägt `.github/workflows/rebuild.yml` fehl. GitHub pausiert geplante Workflows nach 60 Tagen ohne Commits.
 - Spielplan: SIHF-Link beim Team im Studio eintragen (`https://www.sihf.ch/de/game-center/team/109-2-710048`).
