@@ -43,7 +43,16 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
   auch Mitglieder verwalten und Daten löschen). Falls das zum Problem wird: Growth-Plan ($15/Benutzer/Monat)
   mit Rolle «Editor», oder Non-Profit-Plan bei Sanity anfragen.
 - Das Projekt startete im 30-tägigen Growth-Trial (bis ca. 2026-11-02); danach Free-Plan prüfen.
-- Cloudflare-Konto ist aktuell das persönliche Konto von Yves; für die Übergabe an den Club ggf. später ein Club-Konto.
+- Cloudflare-Konto ist aktuell das persönliche Konto von Yves; langfristig Club-E-Mail-Konto oder zweites Mitglied.
+
+### Eigentum / Zugänge (Empfehlung)
+
+| Dienst | Stand | Empfehlung |
+| --- | --- | --- |
+| GitHub | Organisation `Wintistars`, Repo `website` | Zweiten Owner (z. B. Vorstand) hinzufügen; altes `SirSiLves/wintistars` archivieren/löschen |
+| Sanity | Organisation `ofwcx1pff` von Yves | Zweiten Admin einladen |
+| Cloudflare | Persönliches Konto Yves | Später Club-Konto oder zweites Mitglied |
+| Domain wintistars.ch | Inhaber unklar | Sollte auf den Club laufen; vor dem Umhängen klären |
 
 ## Vorgehen / Status
 
@@ -52,7 +61,11 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 3. [x] GitHub-Repository Wintistars/website angelegt und gepusht (altes SirSiLves/wintistars abgelöst)
    - [ ] `main` schützen (Branch-Protection)
 4. [x] Studio deployen (https://wintistars.sanity.studio) (`npx sanity login`, dann `npm run studio:deploy`)
-5. [ ] Cloudflare Pages mit dem Repository verbinden (Framework Astro, `npm run build`, `dist`)
+5. [ ] **Nächster Schritt:** Cloudflare Pages mit dem Repository verbinden
+   - Konto: Cloudflare-Account `fd52f99b603613c078b3bbcf2afb2586` (register@ruosch.me), noch keine Projekte
+   - Workers & Pages → Create application → Pages → Import Git repository → «Connect GitHub»
+   - GitHub-App in der Organisation **Wintistars** installieren, Zugriff **nur** auf `website`
+   - Production-Branch `main`, Framework-Preset Astro, Build `npm run build`, Output `dist`, keine Umgebungsvariablen
 6. [ ] Deploy-Hook von Cloudflare als Sanity-Webhook eintragen (sanity.io/manage → API → Webhooks)
 7. [ ] Editoren im Sanity-Projekt einladen; Inhalte von der alten Seite migrieren (Testlauf)
 8. [ ] Domain wintistars.ch erst nach Fertigstellung umhängen (DNS-Zugriff vorher klären)
