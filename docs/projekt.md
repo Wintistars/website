@@ -51,7 +51,7 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 | --- | --- | --- |
 | GitHub | Organisation `Wintistars`, Repo `website` | Zweiten Owner (z. B. Vorstand) hinzufügen; altes `SirSiLves/wintistars` archivieren/löschen |
 | Sanity | Organisation `ofwcx1pff` von Yves | Zweiten Admin einladen |
-| Cloudflare | Persönliches Konto Yves | Später Club-Konto oder zweites Mitglied |
+| Cloudflare | Persönliches Konto Yves, Pages-Projekt `wintistars` | Später Club-Konto oder zweites Mitglied |
 | Domain wintistars.ch | Inhaber unklar | Sollte auf den Club laufen; vor dem Umhängen klären |
 
 ## Vorgehen / Status
@@ -61,12 +61,16 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 3. [x] GitHub-Repository Wintistars/website angelegt und gepusht (altes SirSiLves/wintistars abgelöst)
    - [ ] `main` schützen (Branch-Protection)
 4. [x] Studio deployen (https://wintistars.sanity.studio) (`npx sanity login`, dann `npm run studio:deploy`)
-5. [ ] **Nächster Schritt:** Cloudflare Pages mit dem Repository verbinden
-   - Konto: Cloudflare-Account `fd52f99b603613c078b3bbcf2afb2586` (register@ruosch.me), noch keine Projekte
-   - Workers & Pages → Create application → Pages → Import Git repository → «Connect GitHub»
-   - GitHub-App in der Organisation **Wintistars** installieren, Zugriff **nur** auf `website`
-   - Production-Branch `main`, Framework-Preset Astro, Build `npm run build`, Output `dist`, keine Umgebungsvariablen
-6. [ ] Deploy-Hook von Cloudflare als Sanity-Webhook eintragen (sanity.io/manage → API → Webhooks)
+5. [x] Cloudflare Pages mit dem Repository verbunden (2026-10-03) → <https://wintistars.pages.dev>
+   - Cloudflare-Account `fd52f99b603613c078b3bbcf2afb2586` (register@ruosch.me), Pages-Projekt `wintistars`
+   - GitHub-App «Cloudflare Workers and Pages» in der Organisation **Wintistars**, Zugriff **nur** auf `website`
+   - Production-Branch `main` (jeder Push deployt automatisch), Preset Astro, `npm run build` → `dist`,
+     Node 22 aus `.nvmrc`, keine Umgebungsvariablen
+6. [x] Rebuild bei Veröffentlichung eingerichtet (2026-10-03)
+   - Cloudflare: Deploy-Hook `sanity-publish` (Branch `main`) unter Pages → wintistars → Settings → Builds
+   - Sanity: Webhook «Cloudflare Rebuild» (Dataset `production`, Create/Update/Delete, POST, ohne Entwürfe)
+   - Die Hook-URL ist geheim (wer sie kennt, kann Builds auslösen) und steht deshalb nicht im Repo.
+   - [ ] Ende-zu-Ende testen: Inhalt im Studio veröffentlichen → neuer Deploy in Cloudflare sichtbar
 7. [ ] Editoren im Sanity-Projekt einladen; Inhalte von der alten Seite migrieren (Testlauf)
 8. [ ] Domain wintistars.ch erst nach Fertigstellung umhängen (DNS-Zugriff vorher klären)
 
