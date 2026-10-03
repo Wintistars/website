@@ -50,5 +50,26 @@ GitHub-Secrets: `SANITY_AUTH_TOKEN` (Studio-Deploy), `CLOUDFLARE_DEPLOY_HOOK` (t
   Keine Bilder/Texte hart codieren, die sich ändern können. Studio-Texte für Nicht-Techniker formulieren.
 - Logo nur als originalgetreue Vektordatei verwenden, nie aus Fotos nachbauen.
   Farben in `src/styles/global.css` sind Platzhalter, bis Logo/Trikotfarben definitiv sind.
-- `main` ist geschützt: Änderungen per Branch + Pull Request.
+- Änderungen immer per Branch + Pull Request auf `main` (Branch-Protection ist noch nicht aktiv). Yves merged selbst.
 - UI-Texte auf Deutsch (de-CH, «ss» statt «ß»).
+
+## Betrieb & Deployment
+
+- Live (bis Domain umgehängt ist): <https://wintistars.pages.dev>. Cloudflare Pages baut bei jedem Push auf `main`,
+  bei Veröffentlichung im Studio (Sanity-Webhook → Deploy-Hook) und per `.github/workflows/rebuild.yml` (täglich).
+- Studio: `.github/workflows/studio-deploy.yml` deployt bei Änderungen unter `studio/`. Der Studio-Build liest die
+  Root-`tsconfig.json` (erweitert `astro/tsconfigs/strict`) → in CI immer auch `npm ci` im Root.
+- Nach Änderungen am Content-Modell prüfen, ob bestehende Dokumente in Sanity migriert werden müssen.
+
+## Hinweise für Agents
+
+- Sanity-Daten lesen/schreiben per CLI aus `studio/` (nutzt Yves' `npx sanity login`):
+  `npx sanity documents query --api-version 2026-10-01 '<GROQ>'`, `npx sanity documents create <datei.json> --replace`,
+  `npx sanity documents delete <id>`. Schreiben in `production` ist live (Webhook löst Build aus) → vorher mit Yves abklären.
+- Browser-Automation im **gehosteten** Studio (wintistars.sanity.studio → läuft im sanity.io-Dashboard-iframe)
+  funktioniert nicht zuverlässig. Stattdessen das lokale Studio (`npm run studio`, http://localhost:3333) in Yves' Chrome
+  verwenden (Login dort macht Yves) oder die CLI.
+- «Mein Browser» = Claude in Chrome (Yves' Chrome mit seinen Logins).
+- `.env` ist für Claude per `.claude/settings.json` gesperrt; nicht umgehen. Secrets nie ins Repo oder in Commits.
+- Commit-Messages ohne Co-Autor-Trailer (ein lokaler Hook blockiert ihn).
+- Zeiten im Spielplan immer über `src/lib/zeit.ts` (Europe/Zurich); der Build-Server läuft in UTC.

@@ -3,6 +3,8 @@
 Club-Website des EHC Wintistars (Winterthur). Astro (statisch) + Sanity (CMS) + Cloudflare Pages.
 Hintergrund, Entscheide und Status: [docs/projekt.md](docs/projekt.md).
 
+Live (Vorschau-Domain): <https://wintistars.pages.dev> · Studio für Editoren: <https://wintistars.sanity.studio>
+
 ## Lokal starten
 
 ```bash
