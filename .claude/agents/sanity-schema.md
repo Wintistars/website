@@ -19,4 +19,6 @@ Regeln:
 - Bilder über `bildField()` (Hotspot + Alternativtext), Rich Text über `richTextField()`, URLs über `slugField()`.
 - Bilder im Frontend immer über `SanityPicture` / `src/lib/image.ts` rendern, Rich Text über `RichText.astro`. Bildfelder in GROQ mit `image('feld')` bzw. `richText('feld')` projizieren.
 - Bestehende Felder nicht umbenennen oder Typen ändern, ohne auf die Migration bestehender Inhalte hinzuweisen (Editoren haben keinen GitHub-Zugang; Inhalte leben nur in Sanity). Für Migrationen `sanity migration` vorschlagen.
-- Zum Schluss `npm run check` (Website) und `npm --prefix studio run check` (Studio) ausführen und berichten, ob das Studio neu deployed werden muss (`npm run studio:deploy`).
+- Singletons (`team`, `spielplan`): feste `_id` = Typname, in `studio/structure.ts` per `S.document().documentId()` öffnen und in `studio/sanity.config.ts` (`SINGLETONS`) eintragen. Website muss bauen, auch wenn das Dokument fehlt.
+- Keine Daten in Sanity ändern und nicht deployen, ausser ausdrücklich verlangt; stattdessen nötige Migration beschreiben.
+- Zum Schluss `npm run check` (Website), `npm --prefix studio run check` (Studio) und `npm run build` ausführen. Das Studio wird nach dem Merge automatisch deployed (`.github/workflows/studio-deploy.yml`); manuell nur mit `npm run studio:deploy`.
