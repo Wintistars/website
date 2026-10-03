@@ -23,19 +23,25 @@ GitHub-Secrets: `SANITY_AUTH_TOKEN` (Studio-Deploy), `CLOUDFLARE_DEPLOY_HOOK` (t
 ## Struktur
 
 - `studio/schemaTypes/` – Content-Modell (Quelle der Wahrheit); `fields.ts` = gemeinsame Felder (Bild, Rich Text, Slug)
-- `src/lib/sanity.ts` – Sanity-Client und alle GROQ-Abfragen (`getNews`, `getTeams`, `getSpieler`, `getSeiten`, `getHome`, `getSpiele`, `getSihfQuellen`)
+- `src/lib/sanity.ts` – Sanity-Client und alle GROQ-Abfragen (`getNews`, `getTeam`, `getSpieler`, `getSeiten`, `getHome`, `getSpiele`, `getSpielplanEinstellungen`)
 - `src/lib/sihf.ts` + `src/lib/spielplan.ts` – Spielplan: SIHF-Export (Meisterschaft) + Sanity-Spiele; Zeiten immer über `src/lib/zeit.ts` (Europe/Zurich)
 - `src/lib/types.ts` – TS-Typen passend zu den GROQ-Projektionen
+- `src/lib/verein.ts` – fester Teamname `VEREIN` («EHC Wintistars») für Team-Seite, Spielplan, Kalender
 - `src/lib/image.ts` + `src/components/SanityPicture.astro` – Bilder über das Sanity-Bild-CDN
 - `src/components/richtext/` – Portable Text (Rich Text) inkl. Bildern
 - `src/components/content/` – Darstellung je Dokumenttyp
-- `src/pages/` – Routen: `/`, `/news/[slug]`, `/teams/[slug]`, `/spieler/[slug]`, `/spielplan`, `/spielplan.ics`, `/[...slug]` (Typ `seite`)
+- `src/pages/` – Routen: `/`, `/news/[slug]`, `/team`, `/spieler/[slug]`, `/spielplan`, `/spielplan.ics`, `/[...slug]` (Typ `seite`)
 
 ## Konventionen
 
-- Dokumenttypen: `news`, `spieler`, `team`, `seite`, `spiel` (nur Plausch/Turnier; Meisterschaft kommt über `team.sihfUrl`). Startseite = `seite` mit Slug `home`.
+- Dokumenttypen: `news`, `spieler`, `team`, `spielplan`, `seite`, `spiel` (nur Plausch/Turnier; Meisterschaft kommt über `spielplan.sihfUrl`).
+  Startseite = `seite` mit Slug `home`.
+- Der Club hat **ein** Team. `team` (Teaminfos & Kader) und `spielplan` (Einstellungen) sind Singletons mit fester
+  `_id` = Typname: geöffnet über `studio/structure.ts`, abgesichert in `studio/sanity.config.ts` (`SINGLETONS`:
+  keine Vorlage zum Neu-Erstellen, kein Löschen/Duplizieren). Abfragen per `*[_id == "team"][0]`; fehlt das Dokument,
+  muss die Website trotzdem bauen.
   Navigation (`src/lib/navigation.ts`) verlinkt `/club/` und `/kontakt/` → dafür braucht es Seiten mit diesen Slugs.
-- Team → Spieler ist ein Referenz-Array (`team.spieler`, Reihenfolge = Kader-Reihenfolge).
+- Team → Spieler ist ein Referenz-Array (`team.spieler`, Reihenfolge = Kader-Reihenfolge). Spieler gehören implizit zum Team.
 - Änderung am Content-Modell immer synchron in Schema, GROQ, Typen und Komponenten → Subagent `sanity-schema`.
 
 ## Rahmenbedingungen

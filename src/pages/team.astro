@@ -1,0 +1,22 @@
+---
+// Teaminfos & Kader: Singleton "team" in Sanity. Fehlt es (noch), erscheint ein Hinweis statt eines Fehlers.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TeamDetail from '../components/content/TeamDetail.astro';
+import { getTeam } from '../lib/sanity';
+import { VEREIN } from '../lib/verein';
+
+const team = await getTeam();
+---
+
+<BaseLayout title="Team">
+  {
+    team ? (
+      <TeamDetail team={team} />
+    ) : (
+      <>
+        <h1>{VEREIN}</h1>
+        <p class="muted">Infos folgen.</p>
+      </>
+    )
+  }
+</BaseLayout>

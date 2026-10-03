@@ -1,7 +1,8 @@
 // Spielplan = Meisterschaftsspiele von Swiss Ice Hockey (automatisch) + Plausch-/Turnierspiele aus Sanity.
-import { getSihfQuellen, getSpiele } from './sanity';
+import { getSpiele, getSpielplanEinstellungen } from './sanity';
 import { getSihfSpiele, type SihfSpiel } from './sihf';
-import type { SanitySpiel, SpielArt, TeamRef } from './types';
+import type { SanitySpiel, SpielArt } from './types';
+import { VEREIN } from './verein';
 
 /** Ab wann ein Spiel ohne Resultat als vorbei gilt. */
 const SPIELDAUER_MS = 3 * 60 * 60 * 1000;
@@ -19,10 +20,10 @@ export interface Spiel {
   quelle: 'sihf' | 'sanity';
   beginn: Date;
   ende?: Date;
-  team: TeamRef;
   heim: string;
   gast: string;
-  heimspiel: boolean;
+  /** Auf welcher Seite wir spielen; leer, wenn unser Team im SIHF-Export nicht erkannt wurde. */
+  wir?: 'heim' | 'gast';
   art: SpielArt | 'meisterschaft';
   wettbewerb?: string;
   ort?: string;
@@ -38,8 +39,6 @@ export interface Spiel {
 export interface Spielplan {
   kommend: Spiel[];
   resultate: Spiel[];
-  /** Mehr als ein Team im Spielplan: Team pro Spiel anzeigen. */
-  mehrereTeams: boolean;
 }
 
 let cache: Promise<Spiel[]> | undefined;
@@ -56,7 +55,6 @@ export async function getSpielplan(jetzt = new Date()): Promise<Spielplan> {
   return {
     kommend: spiele.filter((s) => !vorbei(s)),
     resultate: spiele.filter(vorbei).reverse(),
-    mehrereTeams: new Set(spiele.map((s) => s.team.slug)).size > 1,
   };
 }
 
@@ -66,21 +64,14 @@ export async function getNaechstesSpiel(jetzt = new Date()): Promise<Spiel | und
 }
 
 async function ladeSpiele(): Promise<Spiel[]> {
-  const [quellen, eigene] = await Promise.all([getSihfQuellen(), getSpiele()]);
-  const sihf = await Promise.all(
-    quellen.map(async (team) => {
-      const spiele = await getSihfSpiele(team.sihfUrl);
-      const sihfName = eigenerName(spiele);
-      return spiele.map((s) => vonSihf(s, team, sihfName));
-    }),
+  const [einstellungen, eigene] = await Promise.all([getSpielplanEinstellungen(), getSpiele()]);
+  // Ohne SIHF-Link im Studio (Spielplan → Einstellungen) gibt es keine Meisterschaftsspiele.
+  const sihfUrl = einstellungen?.sihfUrl;
+  const sihfSpiele = sihfUrl ? await getSihfSpiele(sihfUrl) : [];
+  const sihfName = eigenerName(sihfSpiele);
+  return [...sihfSpiele.map((s) => vonSihf(s, sihfName)), ...eigene.map(vonSanity)].sort(
+    (a, b) => a.beginn.getTime() - b.beginn.getTime(),
   );
-
-  // Spielen zwei eigene Teams gegeneinander, liefert die SIHF das Spiel bei beiden.
-  const eindeutig = new Map<string, Spiel>();
-  for (const spiel of [...sihf.flat(), ...eigene.map(vonSanity)]) {
-    if (!eindeutig.has(spiel.id)) eindeutig.set(spiel.id, spiel);
-  }
-  return [...eindeutig.values()].sort((a, b) => a.beginn.getTime() - b.beginn.getTime());
 }
 
 /** Unser Team kommt in jedem Spiel vor; die SIHF schreibt den Namen evtl. anders als wir («EHC Winti Stars»). */
@@ -91,17 +82,16 @@ function eigenerName(spiele: SihfSpiel[]): string | undefined {
   return kandidaten.length === 1 ? kandidaten[0][0] : undefined;
 }
 
-function vonSihf(s: SihfSpiel, team: TeamRef, sihfName: string | undefined): Spiel {
-  // Unser Team mit dem Namen aus Sanity anzeigen, damit es überall gleich heisst.
-  const name = (n: string) => (n === sihfName ? team.name : n);
+function vonSihf(s: SihfSpiel, sihfName: string | undefined): Spiel {
+  // Unser Team mit dem festen Vereinsnamen anzeigen, damit es überall gleich heisst.
+  const name = (n: string) => (sihfName && n === sihfName ? VEREIN : n);
   return {
     id: `sihf-${s.id}`,
     quelle: 'sihf',
     beginn: s.beginn,
-    team: { name: team.name, slug: team.slug },
     heim: name(s.heim),
     gast: name(s.gast),
-    heimspiel: s.heim === sihfName,
+    wir: !sihfName ? undefined : s.heim === sihfName ? 'heim' : 'gast',
     art: 'meisterschaft',
     wettbewerb: s.wettbewerb,
     ort: s.ort,
@@ -118,16 +108,14 @@ function sihfHinweis(status: string): string | undefined {
 }
 
 function vonSanity(s: SanitySpiel): Spiel {
-  const wir = s.team.name;
   return {
     id: s._id,
     quelle: 'sanity',
     beginn: new Date(s.beginn),
     ende: s.ende ? new Date(s.ende) : undefined,
-    team: s.team,
-    heim: s.heimspiel ? wir : s.gegner,
-    gast: s.heimspiel ? s.gegner : wir,
-    heimspiel: s.heimspiel,
+    heim: s.heimspiel ? VEREIN : s.gegner,
+    gast: s.heimspiel ? s.gegner : VEREIN,
+    wir: s.heimspiel ? 'heim' : 'gast',
     art: s.art,
     ort: s.ort,
     resultat:
