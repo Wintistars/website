@@ -1147,7 +1147,8 @@ const HF_PUNKTE: P[] = [
     const H = 3.4;
     const L = (H * 264) / 128;
     const CW = (H * 120) / 128;
-    const HECK = (L * 126) / 264;
+    // Gummi/Tuch hinten: knapp unter dem Tuch ansetzen, damit Klareis und Wasser lückenlos an die Maschine anschliessen
+    const HECK = (L * 116) / 264;
     const AUSSEN = -17; // weit links ausserhalb des sichtbaren Felds: fährt ruhig aus dem Feldrand herein
 
     /** Fahrweg als dichte Punktfolge (ca. 0.25 m) mit Länge und Fahrzeit */
@@ -1300,6 +1301,7 @@ const HF_PUNKTE: P[] = [
       }
     };
     /** Kurze nasse Spur hinter dem Gummi, nach hinten auslaufend (wie beim Team) */
+    /** hinten: Strecke der Hinterkante (Abzieher) auf dem Fahrweg */
     const nassMalen = (hinten: number) => {
       if (!nx) return;
       nx.save();
@@ -1362,14 +1364,18 @@ const HF_PUNKTE: P[] = [
           t0 ||= t;
           const sek = Math.max(0, t - t0 - start) / 1000;
           const d = strecke(Math.min(sek, weg.dauer));
-          const [x, y] = punkt(d);
-          const [ax, ay] = punkt(d - 0.4);
-          const [bx, by] = punkt(d + 0.4);
-          const winkel = (Math.atan2(by - ay, bx - ax) * 180) / Math.PI;
+          // Wie ein echtes Fahrzeug: Der Abzieher hinten läuft genau auf dem Fahrweg, die Maschine richtet sich nach
+          // einem Punkt weiter vorne aus (die Front schwenkt in die Kurve). So schliessen Klareis und Wasser
+          // lückenlos ans Heck an.
+          const hinten = d - HECK;
+          const [hx, hy] = punkt(hinten);
+          const [vx, vy] = punkt(hinten + L * 0.9);
+          const ra = Math.atan2(vy - hy, vx - hx);
+          const [x, y] = [hx + Math.cos(ra) * HECK, hy + Math.sin(ra) * HECK];
+          const winkel = (ra * 180) / Math.PI;
           const m = k();
           maschine.style.visibility = 'visible';
           maschine.style.transform = `translate(${(mx + x * m - maschine.offsetWidth / 2).toFixed(1)}px, ${(my + y * m - maschine.offsetHeight / 2).toFixed(1)}px) rotate(${winkel.toFixed(1)}deg)`;
-          const hinten = d - HECK;
           if (hinten > geputzt) {
             radieren(geputzt, hinten);
             geputzt = hinten;
@@ -1667,11 +1673,20 @@ const HF_PUNKTE: P[] = [
     /** Nasse Spur: nur die letzten Meter hinter dem Conditioner (linke/rechte Kante je Schritt) */
     let kanten: [number, number, number, number][] = [];
 
+    let s = 0;
+    let masse = '';
     const vermessen = () => {
       mL = maschine.offsetWidth;
       mH = maschine.offsetHeight;
       const w = tbHinter.clientWidth;
       const h = tbHinter.clientHeight;
+      // Nur bei echter Grössenänderung neu rechnen; die Maschine behält ihre Stelle im Muster, die Spur beginnt
+      // neu (sonst verbände sie alte und neue Bahn zu einem schrägen Keil)
+      if (masse === `${w}x${h}x${mL}`) return;
+      masse = `${w}x${h}x${mL}`;
+      const anteil = laenge ? s / laenge : 0;
+      kanten = [];
+      ctx?.clearRect(0, 0, leinwand.width, leinwand.height);
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       if (leinwand.width !== Math.round(w * dpr) || leinwand.height !== Math.round(h * dpr)) {
         leinwand.width = Math.round(w * dpr);
@@ -1720,6 +1735,7 @@ const HF_PUNKTE: P[] = [
       lang = [0];
       for (let i = 1; i < pts.length; i++) lang.push(lang[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
       laenge = lang[lang.length - 1];
+      s = anteil * laenge;
     };
     const punkt = (d: number): [number, number] => {
       let [lo, hi] = [0, lang.length - 1];
@@ -1735,6 +1751,7 @@ const HF_PUNKTE: P[] = [
     new ResizeObserver(vermessen).observe(tbHinter);
 
     /** Spur als eine Fläche, die nach hinten auf null ausläuft (etwa 3 Maschinenlängen) */
+    /** hx/hy/a: Hinterkante (Abzieher) auf dem Fahrweg und Richtung des Wegs dort */
     const wasser = (hx: number, hy: number, a: number) => {
       if (!ctx) return;
       const halb = (mH * (116 / 128)) / 2;
@@ -1742,7 +1759,9 @@ const HF_PUNKTE: P[] = [
       const letzte = kanten[kanten.length - 1];
       const mx = letzte ? (letzte[0] + letzte[2]) / 2 : 0;
       const my = letzte ? (letzte[1] + letzte[3]) / 2 : 0;
-      if (letzte && Math.hypot(hx - mx, hy - my) > mL) kanten = [];
+      // Pro Bild fährt die Maschine höchstens ein paar Pixel; alles darüber ist ein Sprung (z. B. neu berechneter
+      // Weg): dann beginnt die Spur neu, statt alte und neue Stelle zu verbinden
+      if (letzte && Math.hypot(hx - mx, hy - my) > 12) kanten = [];
       if (!letzte || Math.hypot(hx - mx, hy - my) > 2) kanten.push([hx + nx, hy + ny, hx - nx, hy - ny]);
       // Hinten abschneiden, was weiter als die Spurlänge entfernt ist
       const spurLaenge = mL * 3;
@@ -1755,21 +1774,22 @@ const HF_PUNKTE: P[] = [
       }
       kanten = kanten.slice(Math.max(0, i));
       ctx.clearRect(0, 0, leinwand.width, leinwand.height);
-      if (kanten.length < 2) return;
-      const [k0, kn] = [kanten[0], kanten[kanten.length - 1]];
+      // bis zur aktuellen Hinterkante zeichnen, nicht nur bis zum letzten gespeicherten Schritt
+      const spur = [...kanten, [hx + nx, hy + ny, hx - nx, hy - ny] as [number, number, number, number]];
+      if (spur.length < 2) return;
+      const [k0, kn] = [spur[0], spur[spur.length - 1]];
       const verlauf = ctx.createLinearGradient(hx, hy, (k0[0] + k0[2]) / 2, (k0[1] + k0[3]) / 2);
       verlauf.addColorStop(0, 'rgba(175, 208, 250, 0.16)');
       verlauf.addColorStop(1, 'rgba(175, 208, 250, 0)');
       ctx.beginPath();
       ctx.moveTo(kn[0], kn[1]);
-      for (let j = kanten.length - 2; j >= 0; j--) ctx.lineTo(kanten[j][0], kanten[j][1]);
-      for (let j = 0; j < kanten.length; j++) ctx.lineTo(kanten[j][2], kanten[j][3]);
+      for (let j = spur.length - 2; j >= 0; j--) ctx.lineTo(spur[j][0], spur[j][1]);
+      for (let j = 0; j < spur.length; j++) ctx.lineTo(spur[j][2], spur[j][3]);
       ctx.closePath();
       ctx.fillStyle = verlauf;
       ctx.fill();
     };
 
-    let s = 0;
     let zuletzt = 0;
     let laeuft = false;
     const bild = (t: number) => {
@@ -1778,14 +1798,18 @@ const HF_PUNKTE: P[] = [
       zuletzt = t;
       s += dt * 0.09;
       s %= laenge;
-      const [x, y] = punkt(s);
-      const [vx, vy] = punkt((s + 4) % laenge);
-      const a = Math.atan2(vy - y, vx - x);
+      // Wie ein echtes Fahrzeug: Das Heck mit dem Abzieher läuft genau auf dem Fahrweg, die Maschine richtet sich
+      // nach einem Punkt weiter vorne auf dem Weg aus (die Front schwenkt in die Kurve, nicht das Heck hinaus).
+      // s ist die Stelle des Abziehers; die Spur folgt dem Weg und schliesst so lückenlos ans Heck an.
+      const heck = (mL * 116) / 264;
+      const [hx, hy] = punkt(s);
+      const [vx, vy] = punkt((s + mL * 0.9) % laenge);
+      const a = Math.atan2(vy - hy, vx - hx);
+      const [x, y] = [hx + Math.cos(a) * heck, hy + Math.sin(a) * heck];
       const winkel = (a * 180) / Math.PI;
       maschine.style.transform = `translate(${(x - mL / 2).toFixed(1)}px, ${(y - mH / 2).toFixed(1)}px) rotate(${winkel.toFixed(1)}deg)`;
-      // Hinterkante des Conditioners: 126 von 264 Einheiten hinter der Mitte
-      const heck = (mL * 126) / 264;
-      wasser(x - Math.cos(a) * heck, y - Math.sin(a) * heck, a);
+      const [qx, qy] = punkt((s + 4) % laenge);
+      wasser(hx, hy, Math.atan2(qy - hy, qx - hx));
       requestAnimationFrame(bild);
     };
     new IntersectionObserver((e) => {
