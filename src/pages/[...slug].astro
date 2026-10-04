@@ -33,7 +33,7 @@ const istClub = seite.slug === 'club';
 const istKontakt = seite.slug === 'kontakt';
 const [verein, team] = await Promise.all([getVerein(), istClub ? getTeam() : null]);
 const erfolge = team?.erfolge ?? [];
-const KICKER: Record<string, string> = { club: 'Club', kontakt: 'Mitspielen?' };
+const KICKER: Record<string, string> = { club: 'Über uns', kontakt: 'Mitspielen?' };
 ---
 
 <BaseLayout title={seite.titel} description={seite.einleitung}>
