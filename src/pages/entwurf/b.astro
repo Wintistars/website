@@ -2071,6 +2071,12 @@ const HF_PUNKTE: P[] = [
     overflow: hidden;
     filter: drop-shadow(0 26px 30px rgb(28 34 50 / 0.16));
   }
+  /* Links läuft das Feld weich aus (es geht ja weiter); oben, unten und rechts bleibt die echte Bande.
+     Das Logo liegt ausserhalb dieser Ebene und bleibt voll deckend. */
+  .feld-clip {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 20%);
+    mask-image: linear-gradient(to right, transparent 0, #000 20%);
+  }
   .rink-box {
     position: absolute;
     left: calc((-30 - var(--x0)) * var(--k));
@@ -2203,20 +2209,20 @@ const HF_PUNKTE: P[] = [
   }
   @media (max-width: 600px) {
     /* Handy: dieselbe Komposition wie Desktop, verkleinert – Logo auf der Mittellinie links,
-       Angriffszone mit beiden Bullykreisen und Tor rechts; volle Breite, oben/unten angeschnitten */
+       Angriffszone mit beiden Bullykreisen und Tor rechts; volle Höhe mit Bande oben und unten, links weich auslaufend */
     .feld {
       --x0: -6.5;
       --x1: 30.6;
-      --y0: -13.4;
-      --y1: 13.4;
-      --k: calc(100vw / 37.1);
+      --y0: -15.3;
+      --y1: 15.3;
+      --k: calc((100vw - 10px) / 37.1);
       --sp-gr: 1.7;
       justify-self: start;
-      width: 100vw;
-      height: calc(26.8 * var(--k));
+      width: calc(100vw - 10px);
+      height: calc(30.6 * var(--k));
       aspect-ratio: auto;
       margin-top: 1.4rem;
-      margin-left: calc(-1 * clamp(16px, 4vw, 40px));
+      margin-left: calc(10px - clamp(16px, 4vw, 40px));
     }
     .feld-clip {
       filter: none;
