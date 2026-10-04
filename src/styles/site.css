@@ -1,6 +1,30 @@
 /* Design «Taktiktafel»: Tokens, Grundlayout, Kopf, Fuss und alle Bausteine der Website.
    Global geladen über src/layouts/BaseLayout.astro. Alles hängt am Wrapper `.d` (Tokens) und an `.d-js`
    (gesetzt per Inline-Script, sobald JavaScript läuft: erst dann werden Einblendungen versteckt). */
+/* ================= Grundlagen ================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: #f7f8f6;
+}
+img {
+  max-width: 100%;
+  display: block;
+}
+/* Platz für den fixen Kopf beim Springen zu Abschnitten */
+section[id],
+footer {
+  scroll-margin-top: 88px;
+}
+
 /* ================= Tokens ================= */
 .d {
   --tafel: #f7f8f6;
@@ -2227,24 +2251,38 @@ a.kt-spieler:hover .kt-nachname {
 }
 
 /* ================= Kontakt ================= */
+/* Breit: links Einleitung und Eckdaten, rechts das Formular. Schmal: Einleitung, Formular, Eckdaten. */
 .kontakt-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: clamp(1.5rem, 3vw, 2.5rem);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'lead form'
+    'info form';
+  gap: 0 clamp(1.75rem, 5vw, 4.5rem);
   align-items: start;
+}
+.kontakt-lead {
+  grid-area: lead;
+}
+.kontakt-info {
+  grid-area: info;
+}
+.kontakt-karte {
+  grid-area: form;
 }
 .kontakt-karte {
   padding: clamp(1.3rem, 3vw, 2rem);
 }
 .kontakt-lead {
-  max-width: 34rem;
-  font-size: 1.05rem;
-  color: var(--ink-2);
+  max-width: 26rem;
+  font-size: clamp(1.15rem, 1.6vw, 1.35rem);
+  line-height: 1.5;
+  color: var(--ink);
 }
 .kontakt-form {
   display: grid;
   gap: 1rem;
-  margin-top: 1.4rem;
 }
 .kf-zeile {
   display: grid;
@@ -2324,9 +2362,14 @@ a.kt-spieler:hover .kt-nachname {
   display: none;
 }
 .kontakt-info {
-  padding-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
 }
 .kontakt-info dl {
+  align-self: stretch;
+  margin-top: 1.2rem;
   border-top: 2px solid var(--navy);
 }
 .kontakt-info dl > div {
@@ -2343,11 +2386,11 @@ a.kt-spieler:hover .kt-nachname {
   margin-top: 0.25rem;
   font-weight: 600;
 }
-.kontakt-ics {
+.kontakt-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin-top: 0.6rem;
   padding-block: 0.75rem;
   color: var(--navy);
   font-weight: 650;
@@ -2359,6 +2402,8 @@ a.kt-spieler:hover .kt-nachname {
 @media (max-width: 860px) {
   .kontakt-grid {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'lead' 'form' 'info';
+    gap: 1.4rem;
   }
 }
 @media (max-width: 520px) {
@@ -2391,9 +2436,9 @@ a.kt-spieler:hover .kt-nachname {
 .fuss-motiv {
   position: absolute;
   right: -90px;
-  top: 30px;
+  top: 0;
   width: 600px;
-  height: auto;
+  height: 100%;
   fill: none;
   stroke: rgb(255 255 255 / 0.07);
   stroke-width: 2.5;
@@ -2492,9 +2537,10 @@ a.kt-spieler:hover .kt-nachname {
   position: relative;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.4rem 2rem;
-  padding-block: 1.2rem 5.5rem;
+  gap: 0 2rem;
+  padding-block: 0.6rem 1.6rem;
   font-size: 0.8rem;
   color: rgb(255 255 255 / 0.6);
   background: linear-gradient(rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.12)) 50% 0 /
@@ -2577,8 +2623,6 @@ a.kt-spieler:hover .kt-nachname {
     grid-template-columns: minmax(0, 1fr);
   }
   .fuss-motiv {
-    top: auto;
-    bottom: 40px;
     right: -160px;
     width: 440px;
     opacity: 0.6;
