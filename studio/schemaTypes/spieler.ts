@@ -1,5 +1,5 @@
 import { defineField, defineType } from 'sanity';
-import { bildField, richTextField, slugField } from './fields';
+import { bildField } from './fields';
 
 export const spieler = defineType({
   name: 'spieler',
@@ -7,7 +7,6 @@ export const spieler = defineType({
   type: 'document',
   fields: [
     defineField({ name: 'name', title: 'Name', type: 'string', validation: (rule) => rule.required() }),
-    slugField('name'),
     defineField({ name: 'nummer', title: 'Rückennummer', type: 'number', validation: (rule) => rule.integer().min(0).max(99) }),
     defineField({
       name: 'position',
@@ -31,7 +30,6 @@ export const spieler = defineType({
     }),
     defineField({ name: 'jahrgang', title: 'Jahrgang', type: 'number', validation: (rule) => rule.integer().min(1940).max(2030) }),
     bildField('portrait', 'Porträt'),
-    richTextField('text', 'Text'),
   ],
   orderings: [{ title: 'Name', name: 'nameAsc', by: [{ field: 'name', direction: 'asc' }] }],
   preview: {

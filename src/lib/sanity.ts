@@ -1,7 +1,7 @@
 // Zentraler Datenzugriff auf Sanity. Seiten holen Inhalte nur über diese Funktionen.
 // Das Dataset ist öffentlich: Der Build liest veröffentlichte Inhalte ohne Token.
 import { createClient } from '@sanity/client';
-import type { Album, News, SanitySpiel, Seite, Spieler, SpielplanEinstellungen, Team, Verein } from './types';
+import type { Album, News, SanitySpiel, Seite, SpielplanEinstellungen, Team, Verein } from './types';
 
 export const SANITY_PROJECT_ID = 'j2uq9efj';
 export const SANITY_DATASET = 'production';
@@ -22,7 +22,7 @@ export const client = createClient({
 const image = (field: string) => `${field}{..., "dimensions": asset->metadata.dimensions}`;
 const richText = (field: string) => `${field}[]{..., _type == "image" => {..., "dimensions": asset->metadata.dimensions}}`;
 
-const spielerFields = `_id, name, "slug": slug.current, nummer, position, funktion, jahrgang, ${image('portrait')}, ${richText('text')}`;
+const spielerFields = `_id, name, nummer, position, funktion, jahrgang, ${image('portrait')}`;
 
 export function getNews(limit?: number): Promise<News[]> {
   const range = limit ? `[0...${limit}]` : '';
@@ -44,9 +44,6 @@ export function getTeam(): Promise<Team | null> {
   );
 }
 
-export function getSpieler(): Promise<Spieler[]> {
-  return client.fetch(`*[_type == "spieler" && defined(slug.current)] { ${spielerFields} }`);
-}
 
 /** Manuell erfasste Spiele (Plausch/Turnier), chronologisch. */
 export function getSpiele(): Promise<SanitySpiel[]> {

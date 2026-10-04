@@ -29,14 +29,12 @@ export interface News {
 export interface Spieler {
   _id: string;
   name: string;
-  slug: string;
   nummer?: number;
   position?: SpielerPosition;
   /** Funktion im Team, z. B. «Captain» oder «Betreuer». */
   funktion?: string;
   jahrgang?: number;
   portrait?: SanityImage;
-  text?: RichText;
 }
 
 /** Eintrag in `team.erfolge` (Titel/Erfolge, neuste zuerst). */
