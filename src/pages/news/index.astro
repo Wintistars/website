@@ -1,12 +1,34 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import NewsCard from '../../components/NewsCard.astro';
+import SektionKopf from '../../components/SektionKopf.astro';
+import NewsKarte from '../../components/NewsKarte.astro';
 import { getNews } from '../../lib/sanity';
+import { VEREIN } from '../../lib/verein';
 
 const news = await getNews();
 ---
 
-<BaseLayout title="News">
-  <h1>News</h1>
-  {news.length > 0 ? <div class="grid">{news.map((n) => <NewsCard news={n} />)}</div> : <p class="muted">Noch keine News.</p>}
+<BaseLayout title="News" description={`Neuigkeiten vom ${VEREIN}`}>
+  <div class="seite wrap">
+    <SektionKopf kicker="Aktuell" titel="News" id="news-titel" ebene={1} />
+    {
+      news.length > 0 ? (
+        <div class="news-liste">
+          {news.map((n, i) => (
+            <NewsKarte news={n} verzoegerung={Math.min(i, 5) * 90} />
+          ))}
+        </div>
+      ) : (
+        <p class="blatt leer-blatt">Noch keine News. Schau bald wieder vorbei.</p>
+      )
+    }
+  </div>
 </BaseLayout>
+
+<style>
+  .news-liste {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: clamp(1.25rem, 3vw, 2.25rem);
+  }
+</style>

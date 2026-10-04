@@ -1,0 +1,30 @@
+---
+// Kopf eines Abschnitts: Kicker + grosser Titel (mit Wisch-Einblendung), rechts optional ein «Mehr»-Link.
+interface Props {
+  kicker: string;
+  titel: string;
+  id: string;
+  /** h1 auf Unterseiten, sonst h2 */
+  ebene?: 1 | 2;
+  mehr?: { href: string; label: string };
+}
+const { kicker, titel, id, ebene = 2, mehr } = Astro.props;
+const Tag = ebene === 1 ? 'h1' : 'h2';
+---
+
+<div class="sek-kopf">
+  <div class="wisch" data-rv>
+    <div class="wisch-inhalt">
+      <p class="kicker">{kicker}</p>
+      <Tag id={id} class="h2">{titel}</Tag>
+      <slot />
+    </div>
+  </div>
+  {
+    mehr && (
+      <a class="mehr" href={mehr.href}>
+        {mehr.label} <span aria-hidden="true">→</span>
+      </a>
+    )
+  }
+</div>

@@ -10,7 +10,7 @@ const { node } = Astro.props;
 
 <figure>
   <SanityPicture image={node} widths={[600, 1000, 1400]} sizes="(min-width: 48rem) 45rem, 100vw" />
-  {node.legende && <figcaption class="muted">{node.legende}</figcaption>}
+  {node.legende && <figcaption>{node.legende}</figcaption>}
 </figure>
 
 <style>
@@ -19,6 +19,7 @@ const { node } = Astro.props;
   }
   figcaption {
     font-size: 0.9rem;
-    margin-top: 0.4rem;
+    margin-top: 0.5rem;
+    color: var(--ink-3);
   }
 </style>

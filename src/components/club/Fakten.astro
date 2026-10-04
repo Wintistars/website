@@ -1,0 +1,22 @@
+---
+// Eckdaten des Clubs (Sanity: Club – Allgemein → Eckdaten).
+import type { Fakt } from '../../lib/types';
+
+interface Props {
+  fakten: Fakt[];
+}
+const { fakten } = Astro.props;
+---
+
+{
+  fakten.length > 0 && (
+    <dl class="fakten">
+      {fakten.map((f) => (
+        <div>
+          <dt>{f.titel}</dt>
+          <dd>{f.text}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}

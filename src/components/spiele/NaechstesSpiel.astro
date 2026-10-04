@@ -1,0 +1,100 @@
+---
+// Karte «Nächstes Spiel» mit Gegner, Zeit, Ort und Countdown bis zum Anpfiff.
+import { ART_LABEL, gegner, type Spiel } from '../../lib/spielplan';
+import { kurzOrt, laenge } from '../../lib/spielAnzeige';
+import { formatSpieltag, formatUhrzeit } from '../../lib/zeit';
+
+interface Props {
+  naechstes?: Spiel;
+  /** Eindeutiger Präfix für IDs */
+  id?: string;
+}
+const { naechstes, id = 'next' } = Astro.props;
+---
+
+<article class="blatt matchplan rv" data-rv aria-labelledby={`${id}-titel`}>
+  {
+    naechstes ? (
+      <>
+        <div class="mp-kopf">
+          <p class="label">Nächstes Spiel</p>
+          <span class="chip">{ART_LABEL[naechstes.art]}</span>
+        </div>
+        <div class="mp-inhalt">
+        <h3 id={`${id}-titel`} class={`mp-gegner ${laenge(gegner(naechstes))}`}>
+          {naechstes.wir && (
+            <span class="mp-vs">{naechstes.wir === 'gast' ? 'Auswärts bei' : 'Heimspiel gegen'}</span>
+          )}
+          <span class="mp-name">{gegner(naechstes)}</span>
+        </h3>
+        <p class="mp-wann">
+          <time datetime={naechstes.beginn.toISOString()}>{formatSpieltag(naechstes.beginn)}</time>
+          <span class="mp-zeit">{formatUhrzeit(naechstes.beginn)} Uhr</span>
+        </p>
+        {kurzOrt(naechstes) && (
+          <p class="mp-ort">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path fill="currentColor" d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7Zm0 4.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z" />
+            </svg>
+            {kurzOrt(naechstes)}
+          </p>
+        )}
+        <div class="countdown" data-countdown={naechstes.beginn.toISOString()}>
+          <p class="cd-label">Anpfiff in</p>
+          <div class="cd-felder" aria-hidden="true">
+            {['Tage', 'Std', 'Min', 'Sek'].map((e, i) => (
+              <div class="cd-feld">
+                <span class="cd-zahl" data-teil={i}>--</span>
+                <span class="cd-einheit">{e}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div class="mp-fuss">
+          <a href="/spielplan.ics">Im Kalender speichern</a>
+          {naechstes.link && (
+            <a href={naechstes.link} rel="noopener" target="_blank">
+              Matchblatt SIHF<span class="sr"> (öffnet in neuem Fenster)</span>
+            </a>
+          )}
+        </div>
+        </div>
+      </>
+    ) : (
+      <div class="mp-leer">
+        <div class="mp-kopf">
+          <p class="label">Nächstes Spiel</p>
+        </div>
+        <h3 id={`${id}-titel`} class="mp-gegner l1">Noch kein Spiel angesetzt</h3>
+        <p>Sobald der nächste Match feststeht, steht er hier – mit Countdown bis zum Anpfiff.</p>
+        <a class="mp-leer-link" href="/spielplan.ics">Im Kalender speichern</a>
+      </div>
+    )
+  }
+</article>
+
+<script>
+  // ---------- Countdown ----------
+  const cd = document.querySelector<HTMLElement>('[data-countdown]');
+  if (cd) {
+    const ziel = new Date(cd.dataset.countdown!).getTime();
+    const felder = [...cd.querySelectorAll<HTMLElement>('[data-teil]')];
+    let timer = 0;
+    const tick = () => {
+      const rest = ziel - Date.now();
+      if (rest <= 0) {
+        cd.innerHTML = '<p class="cd-label">Anpfiff ist erfolgt – das Resultat folgt im Spielplan.</p>';
+        window.clearInterval(timer);
+        return;
+      }
+      const s = Math.floor(rest / 1000);
+      const werte = [Math.floor(s / 86400), Math.floor((s % 86400) / 3600), Math.floor((s % 3600) / 60), s % 60];
+      werte.forEach((w, i) => {
+        const txt = String(w).padStart(2, '0');
+        if (felder[i] && felder[i].textContent !== txt) felder[i].textContent = txt;
+      });
+    };
+    tick();
+    timer = window.setInterval(tick, 1000);
+  }
+</script>

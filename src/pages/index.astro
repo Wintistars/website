@@ -1,45 +1,135 @@
 ---
+// Startseite: Hero (Taktiktafel), Matchplan, News, Team, Club, Galerie, Kontakt.
+// Texte: Sanity-Seite «home» (Einleitung = Hero-Text, Inhalt = «Über uns»), Eckdaten aus «Club – Allgemein».
 import BaseLayout from '../layouts/BaseLayout.astro';
-import SeiteInhalt from '../components/content/SeiteInhalt.astro';
-import NewsCard from '../components/NewsCard.astro';
-import SpielZeile from '../components/SpielZeile.astro';
-import { getHome, getNews } from '../lib/sanity';
-import { getNaechstesSpiel } from '../lib/spielplan';
-import { VEREIN } from '../lib/verein';
+import Hero from '../components/start/Hero.astro';
+import SektionKopf from '../components/SektionKopf.astro';
+import NaechstesSpiel from '../components/spiele/NaechstesSpiel.astro';
+import SpielTabelle from '../components/spiele/SpielTabelle.astro';
+import NewsKarte from '../components/NewsKarte.astro';
+import TeamBand from '../components/team/TeamBand.astro';
+import Erfolge from '../components/club/Erfolge.astro';
+import Fakten from '../components/club/Fakten.astro';
+import Kontakt from '../components/club/Kontakt.astro';
+import Galerie from '../components/Galerie.astro';
+import RichText from '../components/richtext/RichText.astro';
+import { getAlben, getHome, getNews, getTeam, getVerein } from '../lib/sanity';
+import { getSpielplan } from '../lib/spielplan';
+import { ausgewaehlteFotos } from '../lib/galerie';
 
-const [home, news, naechstesSpiel] = await Promise.all([getHome(), getNews(6), getNaechstesSpiel()]);
+const [home, news, team, plan, verein, alben] = await Promise.all([
+  getHome(),
+  getNews(3),
+  getTeam(),
+  getSpielplan(),
+  getVerein(),
+  getAlben(),
+]);
+
+const kommend = plan.kommend.filter((s) => !s.hinweis);
+const naechstes = kommend[0];
+const weitere = kommend.slice(1, 6);
+const resultate = plan.resultate.filter((s) => s.resultat).slice(0, 4);
+const spieler = team?.spieler ?? [];
+const nummern = spieler.filter((s) => s.position !== 'torhueter').map((s) => s.nummer ?? 0);
+const fotos = ausgewaehlteFotos(alben, 4);
+const hatUeberUns = (home?.body?.length ?? 0) > 0;
+const fakten = verein?.fakten ?? [];
 ---
 
-<BaseLayout>
-  {home ? <SeiteInhalt seite={home} hideTitle /> : <h1>{VEREIN}</h1>}
+<BaseLayout startseite description={home?.einleitung}>
+  <Hero einleitung={home?.einleitung} nummern={nummern} />
 
+  <!-- MATCHPLAN & SPIELE -->
+  <section class="sektion wrap" id="spiele" aria-labelledby="spiele-titel">
+    <SektionKopf kicker="Spielplan" titel="Matchplan" id="spiele-titel" mehr={{ href: '/spielplan/', label: 'Ganzer Spielplan' }} />
+
+    <div class="spiele-grid">
+      <NaechstesSpiel naechstes={naechstes} />
+
+      <div class="spielliste rv" data-rv style="--d:120ms">
+        <h3 class="h3">Weitere Spiele</h3>
+        {
+          weitere.length > 0 ? (
+            <SpielTabelle spiele={weitere} art="kommend" />
+          ) : (
+            <p class="leer-zeile">Keine weiteren Spiele angesetzt. Neue Termine erscheinen automatisch.</p>
+          )
+        }
+
+        <h3 class="h3 h3-res">Letzte Resultate</h3>
+        {
+          resultate.length > 0 ? (
+            <SpielTabelle spiele={resultate} art="resultate" kopf={false} />
+          ) : (
+            <div class="res-leer zeichne" data-rv>
+              <svg class="res-leer-icon" viewBox="0 0 48 48" aria-hidden="true">
+                <rect class="mk" pathLength="1" x="7" y="9" width="32" height="30" rx="3"></rect>
+                <path class="mk mk-zart" pathLength="1" d="M14 21h18M14 29h11"></path>
+              </svg>
+              <div>
+                <p class="res-leer-titel">Noch keine Resultate</p>
+                <p>Die Saison hat eben erst begonnen. Nach dem ersten Match steht hier das Ergebnis.</p>
+              </div>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- NEWS -->
   {
-    naechstesSpiel && (
-      <section>
-        <h2>Nächstes Spiel</h2>
-        <ol class="naechstes">
-          <SpielZeile spiel={naechstesSpiel} />
-        </ol>
-        <p><a href="/spielplan/">Ganzer Spielplan →</a></p>
+    news.length > 0 && (
+      <section class="sektion wrap" id="news" aria-labelledby="news-titel">
+        <SektionKopf kicker="Aktuell" titel="News" id="news-titel" mehr={{ href: '/news/', label: 'Alle News' }} />
+        <div class="news-grid">
+          {news.map((n, i) => (
+            <NewsKarte news={n} verzoegerung={i * 110} />
+          ))}
+        </div>
       </section>
     )
   }
 
-  <section>
-    <h2>News</h2>
-    {news.length > 0 ? (
-      <div class="grid">{news.map((n) => <NewsCard news={n} />)}</div>
-    ) : (
-      <p class="muted">Noch keine News.</p>
-    )}
-    <p><a href="/news/">Alle News →</a></p>
+  <!-- TEAM: Kadertafel, im Hintergrund die Eismaschine -->
+  <TeamBand spieler={spieler} teamfoto={team?.teamfoto} mehr={{ href: '/team/', label: 'Zum ganzen Team' }} />
+
+  <!-- ÜBER UNS & ERFOLGE -->
+  <section class="sektion wrap" id="club" aria-labelledby="club-titel">
+    <SektionKopf kicker="Club" titel="Über uns" id="club-titel" mehr={{ href: '/club/', label: 'Mehr über den Club' }} />
+    <div class="club-grid">
+      <div class="ueber rv" data-rv>
+        {
+          hatUeberUns && (
+            <div class="ueber-lead">
+              <RichText value={home?.body} />
+            </div>
+          )
+        }
+        <Fakten fakten={fakten} />
+        <div class="ueber-cta">
+          <a class="knopf knopf-voll" href="/club/">Zum Club</a>
+          <a class="knopf" href="#kontakt">Kontakt</a>
+        </div>
+      </div>
+      <Erfolge erfolge={team?.erfolge ?? []} verzoegerung={120} />
+    </div>
+  </section>
+
+  <!-- GALERIE (kompakt) -->
+  {
+    fotos.length > 0 && (
+      <section class="sektion wrap" id="galerie" aria-labelledby="galerie-titel">
+        <SektionKopf kicker="Bilder" titel="Galerie" id="galerie-titel" mehr={{ href: '/galerie/', label: 'Zur Galerie' }} />
+        <Galerie fotos={fotos} max={4} />
+      </section>
+    )
+  }
+
+  <!-- KONTAKT -->
+  <section class="sektion wrap" id="kontakt" aria-labelledby="kontakt-titel">
+    <SektionKopf kicker="Mitspielen?" titel="Kontakt" id="kontakt-titel" />
+    <Kontakt verein={verein} />
   </section>
 </BaseLayout>
-
-<style>
-  .naechstes {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-</style>

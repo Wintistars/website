@@ -1,8 +1,10 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import NewsArtikel from '../../components/content/NewsArtikel.astro';
+import SanityPicture from '../../components/SanityPicture.astro';
+import RichText from '../../components/richtext/RichText.astro';
 import { getNews } from '../../lib/sanity';
+import { formatDatum } from '../../lib/format';
 import type { News } from '../../lib/types';
 
 export const getStaticPaths = (async () => {
@@ -18,6 +20,33 @@ const { news } = Astro.props;
 ---
 
 <BaseLayout title={news.titel} description={news.lead}>
-  <NewsArtikel news={news} />
-  <p><a href="/news/">← Alle News</a></p>
+  <article class="seite wrap artikel">
+    <a class="zurueck" href="/news/"><span aria-hidden="true">←</span> Alle News</a>
+    <header class="artikel-kopf">
+      <p class="kicker"><time datetime={news.datum}>{formatDatum(news.datum)}</time></p>
+      <h1 class="h2">{news.titel}</h1>
+      {news.lead && <p class="seite-lead">{news.lead}</p>}
+    </header>
+    <SanityPicture
+      image={news.bild}
+      widths={[640, 960, 1440, 1920]}
+      sizes="(min-width: 1240px) 1160px, 100vw"
+      eager
+      class="titelbild"
+    />
+    <div class="prose">
+      <RichText value={news.text} />
+    </div>
+  </article>
 </BaseLayout>
+
+<style>
+  .artikel-kopf {
+    max-width: 52rem;
+    margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+  }
+  .artikel :global(.titelbild) {
+    max-height: 70vh;
+    object-fit: cover;
+  }
+</style>

@@ -1,16 +1,36 @@
 ---
-import '../styles/global.css';
-import SiteHeader from '../components/SiteHeader.astro';
-import SiteFooter from '../components/SiteFooter.astro';
+// Grundgerüst aller Seiten im Design «Taktiktafel»: Kopf mit Navigation, Inhalt, Fuss.
+// Styles: src/styles/site.css (global). Seiten liefern ihren Inhalt in <main>.
+// @ts-ignore – Paket ohne Typen
+import '@fontsource-variable/big-shoulders-display';
+import '@fontsource-variable/instrument-sans';
+import '@fontsource/permanent-marker';
+import '../styles/site.css';
+import Magnet from '../components/Magnet.astro';
+import Eismaschine from '../components/Eismaschine.astro';
+import { NAVIGATION } from '../lib/navigation';
+import { getVerein } from '../lib/sanity';
+import { getNaechstesSpiel } from '../lib/spielplan';
+import { GRUENDUNGSJAHR, VEREIN } from '../lib/verein';
+import { ZEITZONE } from '../lib/zeit';
 
 interface Props {
   title?: string;
   description?: string;
+  /** Startseite: «Nächstes Spiel» springt zum Matchplan auf derselben Seite. */
+  startseite?: boolean;
 }
 
-const { title, description = 'EHC Wintistars – Eishockey in Winterthur' } = Astro.props;
-const fullTitle = title ? `${title} | EHC Wintistars` : 'EHC Wintistars';
+const { title, description = `${VEREIN} – Plauscheishockey aus Winterthur, seit ${GRUENDUNGSJAHR}`, startseite = false } =
+  Astro.props;
+const fullTitle = title ? `${title} | ${VEREIN}` : VEREIN;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const pfad = Astro.url.pathname;
+
+const [naechstes, verein] = await Promise.all([getNaechstesSpiel(), getVerein()]);
+const kurzDatum = (d: Date) => d.toLocaleDateString('de-CH', { timeZone: ZEITZONE, day: '2-digit', month: '2-digit' });
+const spielLink = startseite && naechstes ? '#spiele' : '/spielplan/';
+const aktiv = (href: string) => pfad === href || (href !== '/' && pfad.startsWith(href));
 ---
 
 <!doctype html>
@@ -20,28 +40,194 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#f7f8f6" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="text/calendar" title={`Spielplan ${VEREIN}`} href="/spielplan.ics" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:locale" content="de_CH" />
     <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      document.documentElement.classList.add('d-js');
+    </script>
   </head>
   <body>
-    <SiteHeader />
-    <main class="container">
-      <slot />
-    </main>
-    <SiteFooter />
+    <div class="d">
+      <div class="glanz" aria-hidden="true"></div>
+      <Eismaschine defs />
+      <a class="skip" href="#inhalt">Zum Inhalt springen</a>
+
+      <!-- KOPF: oben transparent auf der Tafel, beim Scrollen schmal mit milchigem Hintergrund -->
+      <header class="kopf" data-kopf>
+        <div class="wrap kopf-innen">
+          <a class="marke" href="/" aria-label={`${VEREIN} – Startseite`}>
+            <Magnet size="48px" alt="" eager />
+            <span class="marke-text"><span class="mt-ehc">EHC</span> <span class="mt-name">Wintistars</span></span>
+          </a>
+          <nav class="nav" id="d-nav" aria-label="Hauptnavigation" data-nav>
+            <ul>
+              {
+                NAVIGATION.map((n, i) => (
+                  <li style={`--i:${i}`}>
+                    <a href={n.href} aria-current={aktiv(n.href) ? 'page' : undefined}>
+                      <span class="nav-nr" aria-hidden="true">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span class="nav-text">
+                        {n.label}
+                        <svg class="strich" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true">
+                          <path pathLength="1" d="M3 8 C 28 3, 60 10, 97 5" />
+                        </svg>
+                      </span>
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+            <div class="nav-fuss">
+              <a class="knopf knopf-voll" href={spielLink}>
+                {naechstes ? `Nächstes Spiel ${kurzDatum(naechstes.beginn)}` : 'Zum Spielplan'}
+              </a>
+            </div>
+          </nav>
+          <a class="kopf-cta" href={spielLink}>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              {
+                spielLink.startsWith('#') ? (
+                  <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M6 13l6 6 6-6" />
+                ) : (
+                  <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+                )
+              }
+            </svg>
+            {
+              naechstes ? (
+                <span>
+                  Nächstes Spiel <strong>{kurzDatum(naechstes.beginn)}</strong>
+                </span>
+              ) : (
+                <span>Spielplan</span>
+              )
+            }
+          </a>
+          <button class="menu-knopf" type="button" aria-expanded="false" aria-controls="d-nav" aria-label="Menü" data-menu-knopf>
+            <span class="menu-text" aria-hidden="true">Menü</span>
+            <span class="menu-icon" aria-hidden="true"><i></i><i></i></span>
+          </button>
+        </div>
+      </header>
+      <div class="kopf-platz" aria-hidden="true"></div>
+
+      <main id="inhalt">
+        <slot />
+      </main>
+
+      <!-- FUSS -->
+      <footer class="fuss">
+        <svg class="fuss-motiv" viewBox="0 0 600 400" aria-hidden="true" focusable="false">
+          <line x1="300" y1="0" x2="300" y2="400" class="fm-rot"></line>
+          <line x1="150" y1="0" x2="150" y2="400" class="fm-blau"></line>
+          <line x1="450" y1="0" x2="450" y2="400" class="fm-blau"></line>
+          <circle cx="300" cy="200" r="120"></circle>
+          <circle cx="300" cy="200" r="6" class="fm-punkt"></circle>
+        </svg>
+        <div class="wrap fuss-innen">
+          <div class="fuss-marke">
+            <Magnet size="92px" alt="" ring="#d9c29c" />
+            <p>
+              <strong>{VEREIN}</strong>
+              <span>Plauscheishockey aus Winterthur</span>
+              <span class="fuss-seit">Est. {GRUENDUNGSJAHR}</span>
+            </p>
+          </div>
+          <nav class="fuss-nav" aria-label="Fussnavigation">
+            <div>
+              <p class="fuss-h">Saison</p>
+              <ul>
+                <li><a href="/news/">News</a></li>
+                <li><a href="/spielplan/">Spielplan</a></li>
+                <li><a href="/team/">Team</a></li>
+              </ul>
+            </div>
+            <div>
+              <p class="fuss-h">Verein</p>
+              <ul>
+                <li><a href="/club/">Club</a></li>
+                <li><a href="/galerie/">Galerie</a></li>
+                <li><a href="/kontakt/">Kontakt</a></li>
+              </ul>
+            </div>
+          </nav>
+          <div class="fuss-abo">
+            <p class="fuss-h">Kalender-Abo</p>
+            <p class="abo-titel">Jeder Match automatisch im eigenen Kalender.</p>
+            <p class="abo-text">Meisterschaft und Plauschspiele – Änderungen kommen von selbst nach.</p>
+            <a class="knopf knopf-orange" href="/spielplan.ics">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path fill="currentColor" d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2Zm12 8H5v9h14v-9Z"></path>
+              </svg>
+              Kalender abonnieren
+            </a>
+          </div>
+        </div>
+        <div class="wrap fuss-unten">
+          <p>© {new Date().getFullYear()} {VEREIN}</p>
+          {verein?.kontaktEmail && <a href={`mailto:${verein.kontaktEmail}`}>{verein.kontaktEmail}</a>}
+          <a href="#">Nach oben <span aria-hidden="true">↑</span></a>
+        </div>
+      </footer>
+    </div>
   </body>
 </html>
 
-<style>
-  body {
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
+<script>
+  // ---------- Mobiles Menü ----------
+  const kopf = document.querySelector<HTMLElement>('[data-kopf]');
+  const knopf = document.querySelector<HTMLButtonElement>('[data-menu-knopf]');
+  const nav = document.querySelector<HTMLElement>('[data-nav]');
+  const schmal = window.matchMedia('(max-width: 899px)');
+  const setzeMenu = (offen: boolean, fokus = true) => {
+    if (!kopf || !knopf || !nav) return;
+    kopf.toggleAttribute('data-offen', offen);
+    knopf.setAttribute('aria-expanded', String(offen));
+    knopf.setAttribute('aria-label', offen ? 'Menü schliessen' : 'Menü');
+    document.documentElement.style.overflow = offen ? 'hidden' : '';
+    if (offen) nav.querySelector<HTMLElement>('a')?.focus({ preventScroll: true });
+    else if (fokus) knopf.focus({ preventScroll: true });
+  };
+  knopf?.addEventListener('click', () => setzeMenu(knopf.getAttribute('aria-expanded') !== 'true'));
+  nav?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('a') && kopf?.hasAttribute('data-offen')) setzeMenu(false, false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && kopf?.hasAttribute('data-offen')) setzeMenu(false);
+  });
+  document.addEventListener('click', (e) => {
+    if (kopf?.hasAttribute('data-offen') && !kopf.contains(e.target as Node)) setzeMenu(false, false);
+  });
+  schmal.addEventListener('change', () => kopf?.hasAttribute('data-offen') && setzeMenu(false, false));
+  // Beim Scrollen wird der Kopf schmal und bekommt einen milchigen Hintergrund
+  const kleinPruefen = () => kopf?.classList.toggle('klein', window.scrollY > 24);
+  window.addEventListener('scroll', kleinPruefen, { passive: true });
+  kleinPruefen();
+
+  // ---------- Einblendungen (Wischer, Marker, Karten) ----------
+  const alle = document.querySelectorAll<HTMLElement>('[data-rv]');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (eintraege) => {
+        for (const e of eintraege) {
+          if (!e.isIntersecting) continue;
+          e.target.classList.add('is-in');
+          io.unobserve(e.target);
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.15 },
+    );
+    alle.forEach((el) => io.observe(el));
+  } else {
+    alle.forEach((el) => el.classList.add('is-in'));
   }
-  main {
-    flex: 1;
-    width: 100%;
-    padding-block: 2rem 4rem;
-  }
-</style>
+</script>

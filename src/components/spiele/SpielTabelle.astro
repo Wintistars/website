@@ -1,0 +1,118 @@
+---
+// Spiele als Tabelle im Taktiktafel-Stil: kommende Spiele mit Zeit und Heim/Auswärts,
+// Resultate mit Score und Marker (Haken = Sieg, Kreuz = Niederlage, Welle = Unentschieden).
+import { ausgang, gegner, type Spiel } from '../../lib/spielplan';
+import { AUSGANG_LABEL, kurzDatum, metaZeile, score } from '../../lib/spielAnzeige';
+import { datumTeile, formatUhrzeit } from '../../lib/zeit';
+
+interface Props {
+  spiele: Spiel[];
+  art: 'kommend' | 'resultate';
+  /** Kopfzeile (Datum/Gegner/Zeit/H-A) zeigen */
+  kopf?: boolean;
+  /** Bemerkung, Hinweis und Link zum Matchblatt zeigen (Spielplan-Seite) */
+  details?: boolean;
+}
+const { spiele, art, kopf = art === 'kommend', details = false } = Astro.props;
+---
+
+<ol class:list={['tabelle', { 'tabelle-res zeichne': art === 'resultate', 't-details': details }]} data-rv={art === 'resultate' ? '' : undefined}>
+  {
+    kopf && (
+      <li class="t-kopf" aria-hidden="true">
+        <span>Datum</span>
+        <span>Gegner</span>
+        <span>{art === 'kommend' ? 'Zeit' : 'Resultat'}</span>
+        <span class="t-ha">{art === 'kommend' ? 'H/A' : ''}</span>
+      </li>
+    )
+  }
+  {
+    spiele.map((s) => {
+      const t = datumTeile(s.beginn);
+      const a = ausgang(s);
+      const abgesagt = !!s.hinweis && !s.resultat;
+      return (
+        <li class:list={['t-zeile', { 't-abgesagt': abgesagt }]}>
+          <time class="t-datum" datetime={s.beginn.toISOString()}>
+            <span class="t-wt">{t.wochentag}</span>
+            <span class="t-tag">{kurzDatum(s.beginn)}</span>
+          </time>
+          <span class="t-mitte">
+            <span class="t-gegner">{gegner(s)}</span>
+            <span class="t-meta">
+              {s.hinweis && <strong class="t-hinweis">{s.hinweis}</strong>}
+              {s.hinweis && ' · '}
+              {metaZeile(s)}
+              {details && s.bemerkung && ` · ${s.bemerkung}`}
+              {details && s.link && (
+                <>
+                  {' · '}
+                  <a class="t-link" href={s.link} rel="noopener" target="_blank">
+                    Matchblatt<span class="sr"> bei Swiss Ice Hockey (öffnet in neuem Fenster)</span>
+                  </a>
+                </>
+              )}
+            </span>
+          </span>
+          {art === 'kommend' ? (
+            <span class="t-zeit">{formatUhrzeit(s.beginn)}</span>
+          ) : (
+            <span class={`t-score a-${a ?? 'x'}`}>
+              {score(s)}
+              {s.zusatz && <small class="t-zusatz">{s.zusatz}</small>}
+            </span>
+          )}
+          <span class="t-ha">
+            {art === 'kommend' && s.wir && (
+              <span class={`ha ha-${s.wir}`} title={s.wir === 'heim' ? 'Heimspiel' : 'Auswärtsspiel'}>
+                <span aria-hidden="true">{s.wir === 'heim' ? 'H' : 'A'}</span>
+                <span class="sr">{s.wir === 'heim' ? 'Heimspiel' : 'Auswärtsspiel'}</span>
+              </span>
+            )}
+            {art === 'resultate' && a && (
+              <svg class={`haken a-${a}`} viewBox="0 0 32 32" aria-hidden="true">
+                {a === 'sieg' ? (
+                  <path class="mk" pathLength="1" d="M5 17 L12 25 L28 6" />
+                ) : a === 'niederlage' ? (
+                  <path class="mk" pathLength="1" d="M7 7 L25 25 M25 7 L7 25" />
+                ) : (
+                  <path class="mk" pathLength="1" d="M5 16 C 10 10, 14 22, 19 16 S 26 12, 28 15" />
+                )}
+              </svg>
+            )}
+            {art === 'resultate' && a && <span class="sr">{AUSGANG_LABEL[a]}</span>}
+          </span>
+        </li>
+      );
+    })
+  }
+</ol>
+
+<style>
+  .t-details .t-meta {
+    white-space: normal;
+  }
+  .t-hinweis {
+    color: var(--rot);
+    font-weight: 700;
+  }
+  .t-abgesagt .t-gegner,
+  .t-abgesagt .t-zeit {
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    color: var(--ink-3);
+  }
+  .t-link {
+    color: inherit;
+  }
+  .t-link:hover {
+    color: var(--orange-text);
+  }
+  .t-zusatz {
+    display: block;
+    font: 600 0.7rem/1 var(--f-text);
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+  }
+</style>

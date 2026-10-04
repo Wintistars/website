@@ -32,9 +32,18 @@ export interface Spieler {
   slug: string;
   nummer?: number;
   position?: SpielerPosition;
+  /** Funktion im Team, z. B. «Captain» oder «Betreuer». */
+  funktion?: string;
   jahrgang?: number;
   portrait?: SanityImage;
   text?: RichText;
+}
+
+/** Eintrag in `team.erfolge` (Titel/Erfolge, neuste zuerst). */
+export interface Erfolg {
+  _key: string;
+  saison: string;
+  titel: string;
 }
 
 /** Singleton `team` (Teaminfos & Kader). Der Teamname ist fest: VEREIN in src/lib/verein.ts. */
@@ -43,6 +52,7 @@ export interface Team {
   teamfoto?: SanityImage;
   trainer?: string;
   beschreibung?: RichText;
+  erfolge: Erfolg[];
   spieler: Spieler[];
 }
 
@@ -50,6 +60,8 @@ export interface Seite {
   _id: string;
   titel: string;
   slug: string;
+  titelbild?: SanityImage;
+  einleitung?: string;
   body?: RichText;
 }
 
@@ -72,4 +84,26 @@ export interface SanitySpiel {
 export interface SpielplanEinstellungen {
   /** Link zur Teamseite im SIHF Game Center (Quelle für Meisterschaftsspiele). */
   sihfUrl?: string;
+}
+
+/** Eintrag in `verein.fakten` (Eckdaten zum Club). */
+export interface Fakt {
+  _key: string;
+  titel: string;
+  text: string;
+}
+
+/** Singleton `verein` (Club – Allgemein). */
+export interface Verein {
+  fakten: Fakt[];
+  kontaktEmail?: string;
+}
+
+/** Galerie-Album, Typ `album`. Nur Alben mit mindestens einem Foto. */
+export interface Album {
+  _id: string;
+  titel: string;
+  datum?: string; // YYYY-MM-DD
+  beschreibung?: string;
+  bilder: (SanityImage & { _key: string; legende?: string })[];
 }

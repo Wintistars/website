@@ -12,6 +12,36 @@ export const team = defineType({
     defineField({ name: 'trainer', title: 'Trainer', type: 'string' }),
     richTextField('beschreibung', 'Beschreibung'),
     defineField({
+      name: 'erfolge',
+      title: 'Erfolge',
+      type: 'array',
+      description: 'Titel und Erfolge, neuste zuerst. Erscheinen auf der Startseite und der Team-Seite.',
+      of: [
+        defineArrayMember({
+          type: 'object',
+          name: 'erfolg',
+          title: 'Erfolg',
+          fields: [
+            defineField({
+              name: 'saison',
+              title: 'Saison/Jahr',
+              type: 'string',
+              description: 'Zum Beispiel «2017/18».',
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: 'titel',
+              title: 'Erfolg',
+              type: 'string',
+              description: 'Zum Beispiel «Meister Conte Hockey Cup, Liga A».',
+              validation: (rule) => rule.required(),
+            }),
+          ],
+          preview: { select: { title: 'titel', subtitle: 'saison' } },
+        }),
+      ],
+    }),
+    defineField({
       name: 'spieler',
       title: 'Kader',
       type: 'array',

@@ -1,0 +1,443 @@
+---
+// Team-Band: randlose Navy-Fläche, im Hintergrund dreht die Eismaschine ihre Runden.
+// Davor Teamfoto und Kadertafel (alle Spieler gleichwertig nach Rückennummer, keine Aufstellung);
+// ein Klick auf einen Spieler öffnet die Spielerkarte.
+import SektionKopf from '../SektionKopf.astro';
+import Eismaschine from '../Eismaschine.astro';
+import { imageSrcset, imageUrl } from '../../lib/image';
+import { LOGO } from '../../lib/logo';
+import { kaderTafel, POS_EINZEL, type KaderSpieler } from '../../lib/kader';
+import type { SanityImage, Spieler } from '../../lib/types';
+import { VEREIN } from '../../lib/verein';
+
+interface Props {
+  spieler: Spieler[];
+  teamfoto?: SanityImage;
+  /** 1 = eigene Seite (/team/, Titel als h1), 2 = Abschnitt auf der Startseite */
+  ebene?: 1 | 2;
+  mehr?: { href: string; label: string };
+}
+const { spieler, teamfoto, ebene = 2, mehr } = Astro.props;
+const { kader, gruppen, rang, GRUPPEN_TITEL } = kaderTafel(spieler);
+const anzahl = kader.length;
+const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.position === 'verteidiger' ? 'v' : 's');
+---
+
+<section class:list={['team-band', { 'team-band-seite': ebene === 1 }]} id="team" aria-labelledby="team-titel">
+  <svg class="tb-motiv" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+    <line x1="760" y1="0" x2="760" y2="600" class="tb-rot" />
+    <line x1="440" y1="0" x2="440" y2="600" class="tb-blau" />
+    <line x1="1080" y1="0" x2="1080" y2="600" class="tb-blau" />
+    <circle cx="760" cy="300" r="150" />
+    <circle cx="760" cy="300" r="5" class="tb-punkt" />
+    <circle cx="250" cy="140" r="150" />
+    <circle cx="250" cy="460" r="150" />
+  </svg>
+  <!-- Im Hintergrund dreht die Eismaschine gemächlich ihre Runden und hinterlässt eine nasse Spur -->
+  <div class="tb-hinter" aria-hidden="true" data-tb-zb>
+    <canvas class="tb-wasser" data-tb-wasser></canvas>
+    <div class="tb-zb"><Eismaschine logo={LOGO} richtung={1} /></div>
+  </div>
+  <div class="wrap tb-innen">
+  <SektionKopf kicker={ebene === 1 ? VEREIN : 'Kader'} titel="Das Team" id="team-titel" ebene={ebene} mehr={mehr}>
+    {anzahl > 0 && <p class="tb-anzahl">{anzahl} Spieler im Kader</p>}
+  </SektionKopf>
+
+  <div class="tb-raster">
+    <figure class:list={['tb-foto', 'rv', { 'tb-foto-leer': !teamfoto?.asset }]} data-rv>
+      {
+        teamfoto?.asset ? (
+          <img
+            src={imageUrl(teamfoto, 1600)}
+            srcset={imageSrcset(teamfoto, [800, 1200, 1600, 2000])}
+            sizes="(min-width: 961px) 50vw, 100vw"
+            alt={teamfoto.alt ?? `Teamfoto ${VEREIN}`}
+            width={teamfoto.dimensions?.width}
+            height={teamfoto.dimensions?.height}
+            loading={ebene === 1 ? 'eager' : 'lazy'}
+            decoding="async"
+          />
+        ) : (
+          <div class="tb-platz">
+            <svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true">
+              <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" d="M6 15h8l3-5h14l3 5h8v23H6Z" />
+              <circle cx="24" cy="26" r="7" fill="none" stroke="currentColor" stroke-width="2.5" />
+            </svg>
+            <span class="tb-platz-titel">Teamfoto folgt</span>
+            <span class="tb-platz-sub">Das Mannschaftsfoto der Saison wird nachgeliefert.</span>
+          </div>
+        )
+      }
+      {teamfoto?.asset && <figcaption>{teamfoto.alt ?? VEREIN}</figcaption>}
+    </figure>
+
+    {
+      kader.length === 0 ? (
+        <div class="kt-leer">
+          <p class="res-leer-titel">Kader folgt</p>
+          <p>Sobald die Spieler erfasst sind, stehen sie hier.</p>
+        </div>
+      ) : (
+        <div class="kadertafel" data-rv>
+          {gruppen.map((g) => (
+            <section class="kt-gruppe" aria-labelledby={`kt-${g.pos}`}>
+              <h3 class="kt-titel" id={`kt-${g.pos}`}>
+                {GRUPPEN_TITEL[g.pos]} <span class="kt-anzahl">{g.spieler.length}</span>
+              </h3>
+              <ul class="kt-liste">
+                {g.spieler.map((s) => {
+                  // Ohne JS: Link aufs Profil (falls vorhanden); mit JS öffnet ein Klick die Spielerkarte
+                  const Tag = s.slug ? 'a' : 'button';
+                  return (
+                    <li style={`--i:${rang.get(s)}`}>
+                      <Tag
+                        class="kt-spieler"
+                        href={s.slug ? `/spieler/${s.slug}/` : undefined}
+                        type={s.slug ? undefined : 'button'}
+                        aria-haspopup="dialog"
+                        data-kt
+                        data-rang={rang.get(s)}
+                        data-nr={s.nummer > 0 ? s.nummer : ''}
+                        data-vorname={s.vorname}
+                        data-nachname={s.name}
+                        data-pos={s.position ? POS_EINZEL[s.position] : 'Spieler'}
+                        data-funktion={s.funktion}
+                        data-rolle={farbe(s)}
+                        data-bild={s.bild}
+                        data-slug={s.slug}
+                      >
+                        <span class:list={['kt-magnet', `kt-${farbe(s)}`, { 'kt-bild': !!s.bild }]} aria-hidden="true">
+                          {s.bild && <img src={s.bild} alt="" loading="lazy" decoding="async" width="600" height="800" />}
+                          <span class="kt-nr">{s.nummer > 0 ? s.nummer : '–'}</span>
+                        </span>
+                        <span class="kt-name">
+                          <span class="sr">{s.nummer > 0 ? `Nummer ${s.nummer}, ` : ''}</span>
+                          <span class="kt-vorname">{s.vorname}</span> <span class="kt-nachname">{s.name}</span>
+                        </span>
+                      </Tag>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )
+    }
+  </div>
+  <slot />
+  </div>
+  {
+    kader.length > 0 && (
+      <dialog class="kt-dialog" data-kt-dialog aria-labelledby="ktd-name">
+        <div class="ktd-karte">
+          <button class="ktd-zu" type="button" data-ktd-zu aria-label="Spielerkarte schliessen">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
+          <div class="ktd-portrait">
+            <img data-ktd-img alt="" width="600" height="800" hidden />
+            <div class="ktd-platz" data-ktd-platz>
+              <span class="ktd-platz-nr" data-ktd-platz-nr aria-hidden="true"></span>
+              <svg class="ktd-silhouette" viewBox="0 0 200 240" aria-hidden="true">
+                <path d="M100 30c-30 0-52 22-52 52v14c0 6 4 10 10 10h4c3 18 18 32 38 32s35-14 38-32h4c6 0 10-4 10-10V82c0-30-22-52-52-52Zm-30 62h60v8H70Z" />
+                <path d="M20 240c4-46 34-78 80-82 46 4 76 36 80 82Z" />
+              </svg>
+              <span class="ktd-platz-text">Porträt folgt</span>
+            </div>
+          </div>
+          <div class="ktd-text">
+            <p class="ktd-pos" data-ktd-pos></p>
+            <p class="ktd-nr" data-ktd-nr aria-hidden="true"></p>
+            <h3 class="ktd-name" id="ktd-name">
+              <span class="ktd-vorname" data-ktd-vorname></span>
+              <span class="ktd-nachname" data-ktd-nachname></span>
+            </h3>
+            <p class="ktd-funktion" data-ktd-funktion hidden></p>
+            <p class="sr" data-ktd-nr-sr></p>
+            <a class="ktd-link" data-ktd-link href="/team/" hidden>Zum Spielerprofil <span aria-hidden="true">→</span></a>
+            <div class="ktd-nav">
+              <button type="button" class="ktd-pfeil" data-ktd-zurueck aria-label="Vorheriger Spieler">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7" /></svg>
+              </button>
+              <span class="ktd-zaehler" data-ktd-zaehler aria-live="polite"></span>
+              <button type="button" class="ktd-pfeil" data-ktd-weiter aria-label="Nächster Spieler">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </dialog>
+    )
+  }
+</section>
+
+<style>
+  .tb-anzahl {
+    margin-top: 0.6rem;
+    color: var(--sand);
+    font-size: 0.95rem;
+  }
+  .ktd-funktion {
+    display: inline-block;
+    margin-top: 0.6rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: var(--creme);
+    color: var(--orange-text);
+    font: 650 0.75rem/1.2 var(--f-text);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .ktd-funktion[hidden] {
+    display: none;
+  }
+</style>
+
+<script>
+  const reduziert = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- Team-Band: Eismaschine fährt im Hintergrund Runden ----------
+  // Gleitende Ovale wie in der Halle (und wie beim Eisaufbereiten im Hero): lange Geraden über das Band, rechts
+  // eine weite Wende, eine halbe Bandhöhe tiefer zurück, links eine Wende auf die nächste Bahn eine Abzieherbreite
+  // tiefer. Unten angekommen arbeitet sie sich genauso wieder nach oben, endlos. Auf schmalen, hohen Bändern
+  // (Handy) laufen die Ovale der Länge nach. Hinter dem Conditioner bleibt eine kurze nasse Spur.
+  // Läuft nur, solange das Band sichtbar ist.
+  const tbHinter = document.querySelector<HTMLElement>('[data-tb-zb]');
+  if (tbHinter && !reduziert && 'IntersectionObserver' in window) {
+    const maschine = tbHinter.querySelector<HTMLElement>('.tb-zb')!;
+    const leinwand = tbHinter.querySelector<HTMLCanvasElement>('[data-tb-wasser]')!;
+    const ctx = leinwand.getContext('2d');
+    let laenge = 0;
+    /** Fahrweg als dichte Punktfolge (ca. 3 px) mit aufsummierter Länge */
+    let pts: [number, number][] = [];
+    let lang: number[] = [];
+    let mL = 0;
+    let mH = 0;
+    /** Nasse Spur: nur die letzten Meter hinter dem Conditioner (linke/rechte Kante je Schritt) */
+    let kanten: [number, number, number, number][] = [];
+
+    let s = 0;
+    let masse = '';
+    const vermessen = () => {
+      mL = maschine.offsetWidth;
+      mH = maschine.offsetHeight;
+      const w = tbHinter.clientWidth;
+      const h = tbHinter.clientHeight;
+      // Nur bei echter Grössenänderung neu rechnen; die Maschine behält ihre Stelle im Muster, die Spur beginnt
+      // neu (sonst verbände sie alte und neue Bahn zu einem schrägen Keil)
+      if (masse === `${w}x${h}x${mL}`) return;
+      masse = `${w}x${h}x${mL}`;
+      const anteil = laenge ? s / laenge : 0;
+      kanten = [];
+      ctx?.clearRect(0, 0, leinwand.width, leinwand.height);
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      if (leinwand.width !== Math.round(w * dpr) || leinwand.height !== Math.round(h * dpr)) {
+        leinwand.width = Math.round(w * dpr);
+        leinwand.height = Math.round(h * dpr);
+        ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+        kanten = [];
+      }
+      // Rechnen in einem Rahmen, in dem die lange Seite waagrecht liegt; bei hohen Bändern wird gespiegelt
+      const quer = h > w;
+      const [L, S] = quer ? [h, w] : [w, h];
+      const rand = mH * 1.1;
+      const [x0, x1, y0, y1] = [rand, L - rand, rand, S - rand];
+      const halb = (y1 - y0) / 2;
+      const n = Math.max(1, Math.round(halb / (mH * 0.85)));
+      const p = halb / n;
+      const rR = halb / 2;
+      const neu: [number, number][] = [];
+      const linie = (x: number, y: number) => {
+        const [xa, ya] = neu.length ? neu[neu.length - 1] : [x, y];
+        const k = Math.max(1, Math.ceil(Math.hypot(x - xa, y - ya) / 3));
+        for (let i = 1; i <= k; i++) neu.push([xa + ((x - xa) * i) / k, ya + ((y - ya) * i) / k]);
+      };
+      // Halbkreis im Uhrzeigersinn um (cx, cy), von oben nach unten (rechts) bzw. von unten nach oben (links)
+      const bogen = (cx: number, cy: number, r: number, von: number, bis: number) => {
+        const k = Math.max(2, Math.ceil((Math.abs(bis - von) * r) / 3));
+        for (let i = 1; i <= k; i++) {
+          const a = von + ((bis - von) * i) / k;
+          neu.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+        }
+      };
+      // Bahnfolge 0, 1, …, n, n−1, …, 1 und wieder 0: hinunter und wieder hinauf
+      const folge = [...Array.from({ length: n + 1 }, (_, k) => k), ...Array.from({ length: n - 1 }, (_, k) => n - 1 - k)];
+      const rStart = (halb + p) / 2; // Wende von Bahn 1 zurück auf Bahn 0
+      neu.push([x0 + rStart, y0]);
+      folge.forEach((k, i) => {
+        const oben = y0 + k * p;
+        const unten = oben + halb;
+        const naechste = y0 + folge[(i + 1) % folge.length] * p;
+        const rL = (unten - naechste) / 2;
+        linie(x1 - rR, oben);
+        bogen(x1 - rR, oben + rR, rR, -Math.PI / 2, Math.PI / 2);
+        linie(x0 + rL, unten);
+        bogen(x0 + rL, naechste + rL, rL, Math.PI / 2, (Math.PI * 3) / 2);
+      });
+      pts = quer ? neu.map(([x, y]) => [y, x]) : neu;
+      lang = [0];
+      for (let i = 1; i < pts.length; i++) lang.push(lang[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      laenge = lang[lang.length - 1];
+      s = anteil * laenge;
+    };
+    const punkt = (d: number): [number, number] => {
+      let [lo, hi] = [0, lang.length - 1];
+      while (hi - lo > 1) {
+        const m = (lo + hi) >> 1;
+        if (lang[m] <= d) lo = m;
+        else hi = m;
+      }
+      const t = (d - lang[lo]) / Math.max(1e-6, lang[hi] - lang[lo]);
+      return [pts[lo][0] + (pts[hi][0] - pts[lo][0]) * t, pts[lo][1] + (pts[hi][1] - pts[lo][1]) * t];
+    };
+    vermessen();
+    new ResizeObserver(vermessen).observe(tbHinter);
+
+    /** Spur als eine Fläche, die nach hinten auf null ausläuft (etwa 3 Maschinenlängen) */
+    /** hx/hy/a: Hinterkante (Abzieher) auf dem Fahrweg und Richtung des Wegs dort */
+    const wasser = (hx: number, hy: number, a: number) => {
+      if (!ctx) return;
+      const halb = (mH * (116 / 128)) / 2;
+      const [nx, ny] = [-Math.sin(a) * halb, Math.cos(a) * halb];
+      const letzte = kanten[kanten.length - 1];
+      const mx = letzte ? (letzte[0] + letzte[2]) / 2 : 0;
+      const my = letzte ? (letzte[1] + letzte[3]) / 2 : 0;
+      // Pro Bild fährt die Maschine höchstens ein paar Pixel; alles darüber ist ein Sprung (z. B. neu berechneter
+      // Weg): dann beginnt die Spur neu, statt alte und neue Stelle zu verbinden
+      if (letzte && Math.hypot(hx - mx, hy - my) > 12) kanten = [];
+      if (!letzte || Math.hypot(hx - mx, hy - my) > 2) kanten.push([hx + nx, hy + ny, hx - nx, hy - ny]);
+      // Hinten abschneiden, was weiter als die Spurlänge entfernt ist
+      const spurLaenge = mL * 3;
+      let weg = 0;
+      let i = kanten.length - 1;
+      for (; i > 0; i--) {
+        const [p, q] = [kanten[i], kanten[i - 1]];
+        weg += Math.hypot((p[0] + p[2]) / 2 - (q[0] + q[2]) / 2, (p[1] + p[3]) / 2 - (q[1] + q[3]) / 2);
+        if (weg > spurLaenge) break;
+      }
+      kanten = kanten.slice(Math.max(0, i));
+      ctx.clearRect(0, 0, leinwand.width, leinwand.height);
+      // bis zur aktuellen Hinterkante zeichnen, nicht nur bis zum letzten gespeicherten Schritt
+      const spur = [...kanten, [hx + nx, hy + ny, hx - nx, hy - ny] as [number, number, number, number]];
+      if (spur.length < 2) return;
+      const [k0, kn] = [spur[0], spur[spur.length - 1]];
+      const verlauf = ctx.createLinearGradient(hx, hy, (k0[0] + k0[2]) / 2, (k0[1] + k0[3]) / 2);
+      verlauf.addColorStop(0, 'rgba(175, 208, 250, 0.16)');
+      verlauf.addColorStop(1, 'rgba(175, 208, 250, 0)');
+      ctx.beginPath();
+      ctx.moveTo(kn[0], kn[1]);
+      for (let j = spur.length - 2; j >= 0; j--) ctx.lineTo(spur[j][0], spur[j][1]);
+      for (let j = 0; j < spur.length; j++) ctx.lineTo(spur[j][2], spur[j][3]);
+      ctx.closePath();
+      ctx.fillStyle = verlauf;
+      ctx.fill();
+    };
+
+    let zuletzt = 0;
+    let laeuft = false;
+    const bild = (t: number) => {
+      if (!laeuft) return;
+      const dt = zuletzt ? Math.min(50, t - zuletzt) : 16;
+      zuletzt = t;
+      s += dt * 0.09;
+      s %= laenge;
+      // Wie ein echtes Fahrzeug: Das Heck mit dem Abzieher läuft genau auf dem Fahrweg, die Maschine richtet sich
+      // nach einem Punkt weiter vorne auf dem Weg aus (die Front schwenkt in die Kurve, nicht das Heck hinaus).
+      // s ist die Stelle des Abziehers; die Spur folgt dem Weg und schliesst so lückenlos ans Heck an.
+      const heck = (mL * 116) / 264;
+      const [hx, hy] = punkt(s);
+      const [vx, vy] = punkt((s + mL * 0.9) % laenge);
+      const a = Math.atan2(vy - hy, vx - hx);
+      const [x, y] = [hx + Math.cos(a) * heck, hy + Math.sin(a) * heck];
+      const winkel = (a * 180) / Math.PI;
+      maschine.style.transform = `translate(${(x - mL / 2).toFixed(1)}px, ${(y - mH / 2).toFixed(1)}px) rotate(${winkel.toFixed(1)}deg)`;
+      const [qx, qy] = punkt((s + 4) % laenge);
+      wasser(hx, hy, Math.atan2(qy - hy, qx - hx));
+      requestAnimationFrame(bild);
+    };
+    new IntersectionObserver((e) => {
+      laeuft = e[0].isIntersecting;
+      zuletzt = 0;
+      if (laeuft) requestAnimationFrame(bild);
+    }).observe(tbHinter);
+  }
+
+  // ---------- Kadertafel: Spielerkarte ----------
+  const ktDialog = document.querySelector<HTMLDialogElement>('[data-kt-dialog]');
+  if (ktDialog) {
+    const spieler = [...document.querySelectorAll<HTMLElement>('[data-kt]')].sort(
+      (a, b) => Number(a.dataset.rang) - Number(b.dataset.rang),
+    );
+    const el = <T extends Element = HTMLElement>(sel: string) => ktDialog.querySelector<T>(sel)!;
+    const img = el<HTMLImageElement>('[data-ktd-img]');
+    const platz = el('[data-ktd-platz]');
+    const link = el<HTMLAnchorElement>('[data-ktd-link]');
+    let index = 0;
+    let opener: HTMLElement | null = null;
+
+    const zeige = (i: number) => {
+      index = (i + spieler.length) % spieler.length;
+      const d = spieler[index].dataset;
+      const nr = d.nr ?? '';
+      el('[data-ktd-pos]').textContent = d.pos ?? '';
+      el('[data-ktd-nr]').textContent = nr ? `#${nr}` : '';
+      el('[data-ktd-nr-sr]').textContent = nr ? `Rückennummer ${nr}` : '';
+      el('[data-ktd-vorname]').textContent = d.vorname ?? '';
+      el('[data-ktd-nachname]').textContent = d.nachname ?? '';
+      el('[data-ktd-platz-nr]').textContent = nr;
+      const funktion = el('[data-ktd-funktion]');
+      funktion.textContent = d.funktion ?? '';
+      funktion.hidden = !d.funktion;
+      ktDialog.dataset.rolle = d.rolle ?? '';
+      if (d.bild) {
+        img.src = d.bild;
+        img.alt = `Porträt ${d.vorname} ${d.nachname}`;
+        img.hidden = false;
+        platz.hidden = true;
+      } else {
+        img.hidden = true;
+        img.removeAttribute('src');
+        platz.hidden = false;
+      }
+      if (d.slug) {
+        link.href = `/spieler/${d.slug}/`;
+        link.hidden = false;
+      } else link.hidden = true;
+      el('[data-ktd-zaehler]').textContent = `${index + 1} / ${spieler.length}`;
+    };
+
+    spieler.forEach((m, i) =>
+      m.addEventListener('click', (e) => {
+        e.preventDefault();
+        opener = m;
+        zeige(i);
+        ktDialog.showModal();
+      }),
+    );
+    /** Schliessen und den Fokus zurück auf den Magneten setzen, der die Karte geöffnet hat */
+    const schliessen = () => {
+      ktDialog.close();
+      opener?.focus();
+    };
+    el('[data-ktd-zu]').addEventListener('click', schliessen);
+    ktDialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      schliessen();
+    });
+    el('[data-ktd-zurueck]').addEventListener('click', () => zeige(index - 1));
+    el('[data-ktd-weiter]').addEventListener('click', () => zeige(index + 1));
+    ktDialog.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        zeige(index - 1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        zeige(index + 1);
+      }
+    });
+    // Klick auf den abgedunkelten Hintergrund schliesst
+    ktDialog.addEventListener('click', (e) => {
+      if (e.target === ktDialog) schliessen();
+    });
+  }
+</script>

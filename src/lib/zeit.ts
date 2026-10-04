@@ -42,3 +42,9 @@ export function formatSpieltag(datum: Date): string {
 export function formatUhrzeit(datum: Date): string {
   return datum.toLocaleTimeString('de-CH', { timeZone: ZEITZONE, hour: '2-digit', minute: '2-digit' });
 }
+
+/** Einzelteile für Datumsblöcke: { wochentag: "Sa", tag: "12", monat: "Okt." } */
+export function datumTeile(datum: Date): { wochentag: string; tag: string; monat: string } {
+  const teil = (opts: Intl.DateTimeFormatOptions) => datum.toLocaleDateString('de-CH', { timeZone: ZEITZONE, ...opts });
+  return { wochentag: teil({ weekday: 'short' }), tag: teil({ day: 'numeric' }), monat: teil({ month: 'short' }) };
+}

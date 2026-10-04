@@ -1,10 +1,11 @@
 import { defineArrayMember, defineField } from 'sanity';
 
 /** Bild mit Hotspot (Zuschnitt) und Pflicht-Alternativtext. */
-export function bildField(name: string, title: string, options: { required?: boolean } = {}) {
+export function bildField(name: string, title: string, options: { required?: boolean; description?: string } = {}) {
   return defineField({
     name,
     title,
+    description: options.description,
     type: 'image',
     options: { hotspot: true },
     fields: [

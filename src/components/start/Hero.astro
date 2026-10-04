@@ -1,0 +1,890 @@
+---
+// Hero der Startseite: Eisfeld als Taktiktafel, Logo als Center-Ice-Magnet, Spielzüge im Loop.
+// Klick aufs Logo: Das Eis vereist, die Eismaschine fährt ihre Runden und bereitet es wieder auf.
+import Magnet from '../Magnet.astro';
+import Eismaschine from '../Eismaschine.astro';
+import { eisTexturDaten } from '../../lib/eisTextur';
+import { LOGO } from '../../lib/logo';
+import { GRUENDUNGSJAHR } from '../../lib/verein';
+
+interface Props {
+  /** Kurztext unter dem Titel (Startseite → Einleitung in Sanity) */
+  einleitung?: string;
+  /** Rückennummern der Feldspieler für die Magnete */
+  nummern: number[];
+}
+const { einleitung, nummern } = Astro.props;
+
+// ---------- Spielzüge (Hero) ----------
+// Das Hero-Feld ist bewusst künstlerisch: randlos, Mittelkreis stark vergrössert, damit das Logo
+// als grosser Center-Ice-Magnet Platz hat. Koordinaten 1600×700, Mitte (800, 350), Tor rechts bei x = 1480.
+type P = readonly [number, number];
+type Art = 'pass' | 'lauf' | 'schuss';
+interface Schritt {
+  art: Art;
+  von: P;
+  nach: P;
+  /** Kontrollpunkt der Kurve, sonst gerade */
+  c?: P;
+}
+const mitte = (s: Schritt): P => s.c ?? [(s.von[0] + s.nach[0]) / 2, (s.von[1] + s.nach[1]) / 2];
+const pfad = (s: Schritt) => {
+  const c = mitte(s);
+  return `M${s.von[0].toFixed(1)} ${s.von[1].toFixed(1)} Q${c[0]} ${c[1]} ${s.nach[0].toFixed(1)} ${s.nach[1].toFixed(1)}`;
+};
+/** Pfeilspitze am Ende der Kurve (Richtung = Tangente am Endpunkt) */
+function spitze(s: Schritt, laenge = 15, winkel = 0.5): string {
+  const c = mitte(s);
+  let dx = s.nach[0] - c[0];
+  let dy = s.nach[1] - c[1];
+  const l = Math.hypot(dx, dy) || 1;
+  dx /= l;
+  dy /= l;
+  const punkt = (a: number) => [
+    (s.nach[0] + (-dx * Math.cos(a) + dy * Math.sin(a)) * laenge).toFixed(1),
+    (s.nach[1] + (-dx * Math.sin(a) - dy * Math.cos(a)) * laenge).toFixed(1),
+  ];
+  const [a, b] = [punkt(winkel), punkt(-winkel)];
+  return `M${a[0]} ${a[1]} L${s.nach[0].toFixed(1)} ${s.nach[1].toFixed(1)} L${b[0]} ${b[1]}`;
+}
+const kreuz = ([x, y]: P, r = 11) => `M${x - r} ${y - r} L${x + r} ${y + r} M${x + r} ${y - r} L${x - r} ${y + r}`;
+
+interface HeroSchritt {
+  art: Art;
+  /** Index des Spielers */
+  spieler: number;
+  /** Pass: Empfänger */
+  nach?: number;
+  /** Laufweg oder Schuss: Endpunkt */
+  ziel?: P;
+  c?: P;
+}
+interface HeroZug {
+  titel: string;
+  /** Startpositionen der Spieler-Magnete */
+  pos: P[];
+  x: P[];
+  schritte: HeroSchritt[];
+}
+// Echtes IIHF-Feld in Metern (60 × 30, Mitte = 0/0), im SVG in Dezimetern (×10).
+// Sichtbar ist die rechte Angriffszone (x von −2 bis 30 m): Mittellinie am Rand, blaue Linie, Bullykreise, Tor.
+// Alle Züge gehen aufs rechte Tor (Torlinie x = 26 m) und enden mit einem Schuss ins Netz.
+const ZUEGE_BREIT: HeroZug[] = [
+  {
+    titel: 'Aufbau über die blaue Linie',
+    pos: [[12.8, -10], [12.8, 9.5], [22.5, 7], [20, -3.5]],
+    x: [[16, -5.5], [17.5, 4.5], [23.2, 3.4], [21, -9.5]],
+    schritte: [
+      { art: 'pass', spieler: 0, nach: 1, c: [15.6, 0] },
+      { art: 'pass', spieler: 1, nach: 2, c: [17.5, 11] },
+      { art: 'pass', spieler: 2, nach: 3, c: [23, 1.5] },
+      { art: 'schuss', spieler: 3, ziel: [25.7, -0.3], c: [23.2, -2.6] },
+    ],
+  },
+  {
+    titel: 'Durch die Mitte',
+    pos: [[12.8, 3], [14, -10.5], [21, -8], [21.5, 6.5]],
+    x: [[16.5, 6], [18.5, -4.5], [23.2, 2.4], [13.8, -5.5]],
+    schritte: [
+      { art: 'lauf', spieler: 0, ziel: [17, 1.5], c: [15, 3.8] },
+      { art: 'pass', spieler: 0, nach: 2, c: [20.2, -3.6] },
+      { art: 'pass', spieler: 2, nach: 3, c: [24.3, -0.6] },
+      { art: 'schuss', spieler: 3, ziel: [25.7, 0.4], c: [24, 4] },
+    ],
+  },
+  {
+    titel: 'Aus der Ecke in den Slot',
+    pos: [[13, -9], [23.8, -11.2], [19, 2.2], [14, 9]],
+    x: [[20.5, -7.6], [17, -1.8], [23, 4.6], [16.5, 6.5]],
+    schritte: [
+      { art: 'pass', spieler: 0, nach: 1, c: [18, -12.8] },
+      { art: 'lauf', spieler: 1, ziel: [27.4, -5.5], c: [27.2, -10] },
+      { art: 'pass', spieler: 1, nach: 2, c: [24.2, -0.8] },
+      { art: 'schuss', spieler: 2, ziel: [25.7, 0.2], c: [22.6, 1.6] },
+    ],
+  },
+];
+/** Handy: gleiche Komposition wie Desktop (Angriffszone), zwei kurze Züge mit drei Spielern.
+    Über dem Tor (x 22–29 m, y −8…−4 m) bleibt Platz für «Tor!». */
+const ZUEGE_SCHMAL: HeroZug[] = [
+  {
+    titel: 'Über die blaue Linie',
+    pos: [[12.5, 8], [21.5, 9.2], [20, -2.4]],
+    x: [[16.5, 4], [18, -7], [24.3, 8.4]],
+    schritte: [
+      { art: 'pass', spieler: 0, nach: 1, c: [17, 11.4] },
+      { art: 'pass', spieler: 1, nach: 2, c: [24.2, 4.4] },
+      { art: 'schuss', spieler: 2, ziel: [25.7, -0.2], c: [23, -2] },
+    ],
+  },
+  {
+    titel: 'Querpass vors Tor',
+    pos: [[12.5, -2], [16, -9.4], [21, 6.6]],
+    x: [[13.2, 4.6], [16.6, 2.2], [24.4, 8]],
+    schritte: [
+      { art: 'pass', spieler: 0, nach: 1, c: [12.6, -7.6] },
+      { art: 'pass', spieler: 1, nach: 2, c: [22, -2] },
+      { art: 'schuss', spieler: 2, ziel: [25.7, 0.4], c: [24, 4] },
+    ],
+  },
+];
+const HERO_SETS = [
+  { name: 'breit', zuege: ZUEGE_BREIT },
+  { name: 'schmal', zuege: ZUEGE_SCHMAL },
+];
+const dm = ([x, y]: P): P => [Math.round(x * 100) / 10, Math.round(y * 100) / 10];
+const zu = (a: P, b: P, d: number): P => {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const l = Math.hypot(dx, dy) || 1;
+  return [a[0] + (dx / l) * d, a[1] + (dy / l) * d];
+};
+interface HeroLinie {
+  art: Art;
+  spieler: number;
+  d: string[];
+  spitze: string;
+  weg?: string;
+}
+/** Linien in Dezimetern aus den Spielerpositionen (Start und Ende ausserhalb der Magnete) */
+const linienVonZug = (z: HeroZug, f = 1): HeroLinie[] => {
+  const pos = z.pos.map(dm);
+  return z.schritte.map((s) => {
+    const von = pos[s.spieler];
+    const ende = s.art === 'pass' ? pos[s.nach!] : dm(s.ziel!);
+    const c: P = s.c ? dm(s.c) : [(von[0] + ende[0]) / 2, (von[1] + ende[1]) / 2];
+    const start = zu(von, c, 13 * f);
+    const stop = s.art === 'pass' ? zu(ende, c, 15 * f) : s.art === 'lauf' ? zu(ende, c, 12 * f) : ende;
+    const st: Schritt = { art: s.art, von: start, nach: stop, c };
+    let d = [pfad(st)];
+    if (s.art === 'schuss') {
+      // Doppellinie wie an der Taktiktafel
+      const dx = stop[0] - start[0];
+      const dy = stop[1] - start[1];
+      const l = Math.hypot(dx, dy) || 1;
+      const n: P = [(-dy / l) * 1.9, (dx / l) * 1.9];
+      const v = (p: P, f: number): P => [p[0] + n[0] * f, p[1] + n[1] * f];
+      const vorne = zu(stop, c, 5);
+      d = [1, -1].map((f) => pfad({ art: 'schuss', von: v(start, f), nach: v(vorne, f), c: v(c, f) }));
+    }
+    const weg = s.art === 'lauf' ? pfad({ art: 'lauf', von, nach: ende, c }) : undefined;
+    if (s.art === 'lauf') pos[s.spieler] = ende;
+    return { art: s.art, spieler: s.spieler, d, spitze: spitze(st, s.art === 'schuss' ? 9.5 : 7.5, 0.5), weg };
+  });
+};
+// Rückennummern aus dem Kader (Feldspieler mit Nummer); ohne Kader neutrale Platzhalter-Nummern
+const feldNummern = nummern.filter((n) => n > 0).sort((a, b) => a - b);
+const HERO_NR = [feldNummern[0] ?? 4, feldNummern[3] ?? 12, feldNummern[6] ?? 22, feldNummern[8] ?? 27];
+/** Pool für die Zufallsauswahl im Hero (pro Spielzug neu gemischt, damit niemand bevorzugt wird) */
+const HERO_POOL = feldNummern.length >= 4 ? feldNummern : [4, 12, 22, 27];
+
+// ---------- Eis aufbereiten (Klick aufs Logo) ----------
+/** Benutztes Eis (Textur mit Kufenspuren) */
+const EIS_TEXTUR = eisTexturDaten();
+
+// IIHF-Feld in Dezimetern: Bullykreise der Zonen (x ±20 m, y ±7 m), Punkte der neutralen Zone (1.5 m vor der blauen Linie)
+const HF_KREISE: P[] = [
+  [-200, -70],
+  [-200, 70],
+  [200, -70],
+  [200, 70],
+];
+const HF_PUNKTE: P[] = [
+  [-99, -70],
+  [-99, 70],
+  [99, -70],
+  [99, 70],
+];
+---
+
+<section class="hero" aria-labelledby="hero-titel">
+  <div class="wrap hero-raster">
+  <div class="hero-kopf">
+    <div class="hk-titel">
+      <h1 id="hero-titel" class="an" style="--i:1">
+        <span class="h1-ehc">EHC</span>
+        <span class="h1-name">Wintistars</span>
+      </h1>
+      <p class="hero-seit an" style="--i:2">
+        <span>Plauscheishockey&nbsp;· Winterthur</span><span class="hs-trenner" aria-hidden="true">&nbsp;· </span><span class="hs-seit">seit&nbsp;{GRUENDUNGSJAHR}</span>
+      </p>
+    </div>
+    <div class="hk-text">
+      {einleitung && <p class="hero-lead an" style="--i:2">{einleitung}</p>}
+      <div class="hero-cta an" style="--i:3">
+        <a class="knopf knopf-voll" href="/spielplan/">Zum Spielplan</a>
+        <a class="knopf" href="/team/">Zum Team</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="feld" data-feld data-nummern={HERO_POOL.join(',')}>
+    <div class="feld-clip">
+    <div class="rink-box">
+    <svg class="hf-rink" viewBox="-300 -150 600 300" aria-hidden="true" focusable="false">
+      <rect class="hf-eis" x="-300" y="-150" width="600" height="300" rx="85" />
+      <g fill="none">
+        <circle class="z l-blau l-duenn" pathLength="1" style="--o:3" cx="0" cy="0" r="45" />
+        <line class="z l-rot l-dick" pathLength="1" style="--o:1" x1="0" y1="-150" x2="0" y2="150" />
+        <line class="z l-blau l-dick" pathLength="1" style="--o:2" x1="-114.3" y1="-150" x2="-114.3" y2="150" />
+        <line class="z l-blau l-dick" pathLength="1" style="--o:2" x1="114.3" y1="-150" x2="114.3" y2="150" />
+        <line class="z l-rot l-duenn" pathLength="1" style="--o:3" x1="-260" y1="-137" x2="-260" y2="137" />
+        <line class="z l-rot l-duenn" pathLength="1" style="--o:3" x1="260" y1="-137" x2="260" y2="137" />
+        {HF_KREISE.map(([cx, cy], k) => (
+          <g>
+            <circle class="z l-rot l-duenn" pathLength="1" style={`--o:${4 + (k % 2)}`} cx={cx} cy={cy} r="45" />
+            <path
+              class="z l-rot l-duenn"
+              pathLength="1"
+              style={`--o:${5 + (k % 2)}`}
+              d={`M${cx - 4} ${cy - 45}v-6M${cx + 4} ${cy - 45}v-6M${cx - 4} ${cy + 45}v6M${cx + 4} ${cy + 45}v6`}
+            />
+          </g>
+        ))}
+        <path class="z l-blau l-duenn l-raum" pathLength="1" style="--o:5" d="M260 -18 A18 18 0 0 0 260 18" />
+        <path class="z l-blau l-duenn l-raum" pathLength="1" style="--o:5" d="M-260 -18 A18 18 0 0 1 -260 18" />
+        <rect class="z l-bande" pathLength="1" style="--o:0" x="-300" y="-150" width="600" height="300" rx="85" />
+      </g>
+      <g class="hf-punkte">
+        {[...HF_KREISE, ...HF_PUNKTE].map(([cx, cy]) => (
+          <circle cx={cx} cy={cy} r="3" />
+        ))}
+        <circle class="hf-punkt-blau" cx="0" cy="0" r="1.6" />
+      </g>
+    </svg>
+    <svg class="zuege" viewBox="-300 -150 600 300" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="d-sp-navy" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2d3550" />
+          <stop offset="1" stop-color="#1c2232" />
+        </linearGradient>
+        {
+          HERO_SETS.flatMap((set) =>
+            set.zuege.flatMap((z, i) =>
+              linienVonZug(z, set.name === 'schmal' ? 1.7 : 1).map((l, k) =>
+                l.art === 'lauf' ? (
+                  <mask id={`d-zm-${set.name}-${i}-${k}`} maskUnits="userSpaceOnUse" x="-300" y="-150" width="600" height="300">
+                    <path class="z-maske" pathLength="1" d={l.d[0]} />
+                  </mask>
+                ) : null,
+              ),
+            ),
+          )
+        }
+      </defs>
+      {
+        HERO_SETS.map((set) => (
+          <g class="zset" data-set={set.name}>
+            {set.zuege.map((z, i) => (
+              <g
+                class:list={['zug', { 'zug-aus': i > 0 }]}
+                data-titel={z.titel}
+                data-pos={z.pos
+                  .map(dm)
+                  .map((p) => p.join(','))
+                  .join(';')}
+              >
+                {z.x.map((pt) => (
+                  <path class="zm zm-x" pathLength="1" d={kreuz(dm(pt), 5)} />
+                ))}
+                {linienVonZug(z, set.name === 'schmal' ? 1.7 : 1).map((l, k) => (
+                  <g class={`schritt s-${l.art}`} data-art={l.art} data-spieler={l.spieler}>
+                    {l.art === 'lauf' ? (
+                      <path
+                        class="s-linie"
+                        d={l.d[0]}
+                        mask={`url(#d-zm-${set.name}-${i}-${k})`}
+                        data-maske={`d-zm-${set.name}-${i}-${k}`}
+                      />
+                    ) : (
+                      l.d.map((dd) => <path class="s-linie" pathLength="1" d={dd} />)
+                    )}
+                    <path class="s-spitze" d={l.spitze} />
+                    {l.weg && <path class="s-weg" d={l.weg} />}
+                  </g>
+                ))}
+              </g>
+            ))}
+            <g class="spieler-ebene">
+              {set.zuege[0].pos.map(dm).map(([x, y], k) => (
+                <g class="sp" transform={`translate(${x} ${y})`}>
+                  <g class="sp-hub">
+                    <circle class="sp-schatten" cx="0.7" cy="1.8" r="9" />
+                    <circle class="sp-koerper" r="9" />
+                    <circle class="sp-rand" r="7.8" />
+                    <text class="sp-nr" y="0.5">{HERO_NR[k]}</text>
+                  </g>
+                </g>
+              ))}
+            </g>
+          </g>
+        ))
+      }
+      <g class="tor" data-tor-grafik>
+        <g class="netz">
+          <path class="netz-flaeche" d="M260 -9.15 H268 Q271 -9.15 271 -6 V6 Q271 9.15 268 9.15 H260 Z" />
+          {[263.5, 267].map((x) => (
+            <line class="netz-faden" x1={x} y1="-8.6" x2={x} y2="8.6" />
+          ))}
+          {[-5.5, -1.8, 1.8, 5.5].map((y) => (
+            <line class="netz-faden" x1="260" y1={y} x2="270.5" y2={y} />
+          ))}
+        </g>
+        <path class="tor-rahmen" d="M260 -9.15 H268 Q271 -9.15 271 -6 V6 Q271 9.15 268 9.15 H260" />
+      </g>
+    </svg>
+    <!-- Eis aufbereiten (Klick aufs Logo): Frost auf Eis und Logo, die Eismaschine räumt ihn
+         in Ovalen von der Mitte nach aussen -->
+    <canvas class="ep-frost" aria-hidden="true" data-ep-frost data-textur={EIS_TEXTUR}></canvas>
+    <canvas class="ep-nass" aria-hidden="true" data-ep-nass></canvas>
+    </div>
+    </div>
+    <div class="feld-logo">
+      <Magnet
+        size="var(--logo-s)"
+        eager
+        alt="Club-Logo EHC Wintistars: roter Löwe im runden Badge «Wintistars Hockey · Est. 1993»"
+      />
+      <canvas class="ep-frost ep-logo-frost" aria-hidden="true" data-ep-logo></canvas>
+      <button type="button" class="lp-knopf" aria-label="Eis von der Eismaschine aufbereiten lassen" data-lp-knopf></button>
+    </div>
+    <!-- Die Maschine fährt über Eis und Logo; erst links vom Logo läuft sie weich aus -->
+    <div class="ep-ebene" aria-hidden="true">
+      <div class="ep-zb" data-ep-zb><Eismaschine logo={LOGO} richtung={1} /></div>
+    </div>
+    <p class="feld-titel" aria-hidden="true"><span data-zug-titel>{ZUEGE_BREIT[0].titel}</span></p>
+    <p class="tor-notiz" aria-hidden="true" data-tor-notiz>Tor!</p>
+  </div>
+  </div>
+</section>
+
+<script>
+  const reduziert = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- Hero: Eis aufbereiten (Klick aufs Logo) ----------
+  // Die Spielzüge ruhen ausgeblendet, Eis und Logo bekommen Frost. Die Eismaschine fährt
+  // gleitende Ovale wie in der Halle: oben an der Bande beginnend, jede Runde eine Abzieherbreite tiefer.
+  // Jede Runde kommt links aus dem weichen Feldrand
+  // (dort ist die andere Hälfte) und fährt dort wieder hinaus. Hinter dem Gummi ist das Eis klar und kurz nass.
+  // Koordinaten in Metern (Mitte 0/0 = Mittelpunkt und Logomitte, Bande bei x 30 und y ±15).
+  const epFeld = document.querySelector<HTMLElement>('[data-feld]');
+  const epFrost = document.querySelector<HTMLCanvasElement>('[data-ep-frost]');
+  if (epFeld && epFrost && !reduziert) {
+    const nassL = epFeld.querySelector<HTMLCanvasElement>('[data-ep-nass]')!;
+    const logoL = epFeld.querySelector<HTMLCanvasElement>('[data-ep-logo]')!;
+    const maschine = epFeld.querySelector<HTMLElement>('[data-ep-zb]')!;
+    const box = epFrost.parentElement!;
+    const fx = epFrost.getContext('2d');
+    const lx = logoL.getContext('2d');
+    const nx = nassL.getContext('2d');
+    const textur = new Image();
+    textur.src = epFrost.dataset.textur ?? '';
+
+    const H = 3.4;
+    const L = (H * 264) / 128;
+    const CW = (H * 120) / 128;
+    // Gummi/Tuch hinten: knapp unter dem Tuch ansetzen, damit Klareis und Wasser lückenlos an die Maschine anschliessen
+    const HECK = (L * 116) / 264;
+    const AUSSEN = -17; // weit links ausserhalb des sichtbaren Felds: fährt ruhig aus dem Feldrand herein
+
+    /** Fahrweg als dichte Punktfolge (ca. 0.25 m) mit Länge und Fahrzeit */
+    const weg = (() => {
+      const pts: [number, number][] = [[AUSSEN, -13.4]];
+      const linie = (x: number, y: number) => {
+        const [x0, y0] = pts[pts.length - 1];
+        const n = Math.max(1, Math.ceil(Math.hypot(x - x0, y - y0) / 0.25));
+        for (let i = 1; i <= n; i++) pts.push([x0 + ((x - x0) * i) / n, y0 + ((y - y0) * i) / n]);
+      };
+      const bogen = (cx: number, cy: number, r: number, von: number, bis: number) => {
+        const n = Math.max(2, Math.ceil((Math.abs(bis - von) * r) / 0.25));
+        for (let i = 1; i <= n; i++) {
+          const w = von + ((bis - von) * i) / n;
+          pts.push([cx + Math.cos(w) * r, cy + Math.sin(w) * r]);
+        }
+      };
+      // Gleitende Ovale wie in der Halle: jede Runde kommt oben herein, wendet in einem weiten Halbkreis
+      // (Radius 7.45 m) um das Ende und fährt 14.9 m tiefer wieder links hinaus. Die erste Runde beginnt ganz oben an
+      // der Bande und geht knapp unter die Mitte; jede weitere Runde liegt eine Abzieherbreite (3 m) tiefer, die
+      // letzte fährt unten an der Bande hinaus. So decken sich die Bahnen ohne enge Kurven.
+      // Die erste und die letzte Runde folgen an ihrer Bandenseite der Bandenrundung, damit die Ecken sauber werden.
+      const R = 7.45;
+      const ENDE = 28.4; // äusserster Punkt der Wende, knapp vor der Bande
+      const [EX, EY, ER] = [21.5, 6.5, 6.9]; // Mittelpunkt und Radius der Ecke, parallel zur Bande
+      const r = 4; // Wende zur Mitte hin
+      for (let k = 0; k < 5; k++) {
+        const oben = -13.4 + 2.95 * k;
+        const unten = oben + 2 * R;
+        linie(AUSSEN, oben);
+        if (k === 0) {
+          linie(EX, oben);
+          bogen(EX, -EY, ER, -Math.PI / 2, 0);
+          linie(ENDE, unten - r);
+          bogen(ENDE - r, unten - r, r, 0, Math.PI / 2);
+        } else if (k === 4) {
+          linie(ENDE - r, oben);
+          bogen(ENDE - r, oben + r, r, -Math.PI / 2, 0);
+          linie(ENDE, EY);
+          bogen(EX, EY, ER, 0, Math.PI / 2);
+        } else {
+          linie(ENDE - R, oben);
+          bogen(ENDE - R, oben + R, R, -Math.PI / 2, Math.PI / 2);
+        }
+        linie(AUSSEN, unten);
+      }
+      const lang = [0];
+      for (let i = 1; i < pts.length; i++) lang.push(lang[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      // Zeit je Stück: auf dem Eis 14 m/s, ausserhalb des Bilds rund achtmal so schnell
+      const zeit = [0];
+      for (let i = 1; i < pts.length; i++) {
+        const aussen = Math.max(pts[i][0], pts[i - 1][0]) < AUSSEN + 3;
+        zeit.push(zeit[i - 1] + (lang[i] - lang[i - 1]) / (aussen ? 110 : 14));
+      }
+      return { pts, lang, zeit, gesamt: lang[lang.length - 1], dauer: zeit[zeit.length - 1] };
+    })();
+    const suche = (arr: number[], v: number) => {
+      let [lo, hi] = [0, arr.length - 1];
+      while (hi - lo > 1) {
+        const m = (lo + hi) >> 1;
+        if (arr[m] <= v) lo = m;
+        else hi = m;
+      }
+      return lo;
+    };
+    const punkt = (d: number): [number, number] => {
+      const s = Math.min(weg.gesamt, Math.max(0, d));
+      const i = suche(weg.lang, s);
+      const j = Math.min(i + 1, weg.pts.length - 1);
+      const t = (s - weg.lang[i]) / Math.max(1e-6, weg.lang[j] - weg.lang[i]);
+      return [weg.pts[i][0] + (weg.pts[j][0] - weg.pts[i][0]) * t, weg.pts[i][1] + (weg.pts[j][1] - weg.pts[i][1]) * t];
+    };
+    const strecke = (sek: number) => {
+      const i = suche(weg.zeit, sek);
+      const j = Math.min(i + 1, weg.zeit.length - 1);
+      const t = (sek - weg.zeit[i]) / Math.max(1e-6, weg.zeit[j] - weg.zeit[i]);
+      return weg.lang[i] + (weg.lang[j] - weg.lang[i]) * Math.min(1, t);
+    };
+
+    /** Leinwand vorbereiten; gezeichnet wird in Metern, 0/0 in der Mitte des Elements */
+    const k = () => box.clientWidth / 60;
+    const vorbereiten = (c: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const el = c.parentElement!;
+      const [w, h] = [el.clientWidth, el.clientHeight];
+      c.width = Math.round(w * dpr);
+      c.height = Math.round(h * dpr);
+      const m = k() * dpr;
+      ctx.setTransform(m, 0, 0, m, (w * dpr) / 2, (h * dpr) / 2);
+    };
+    const rink = (ctx: CanvasRenderingContext2D) => {
+      ctx.beginPath();
+      ctx.roundRect(-30, -15, 60, 30, 8.5);
+    };
+    /** Benutztes Eis: matter Grundton, Schnee an der Bande, Textur mit Kufenspuren */
+    const frostFuellen = (ctx: CanvasRenderingContext2D) => {
+      ctx.fillStyle = 'rgba(226, 231, 235, 0.86)';
+      ctx.fillRect(-30, -15, 60, 30);
+      for (const y of [-15, 15]) {
+        const g = ctx.createLinearGradient(0, y, 0, y * 0.7);
+        g.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+        g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(-30, -15, 60, 30);
+      }
+      ctx.fillStyle = 'rgba(236, 240, 243, 0.4)';
+      ctx.fillRect(-30, -15, 60, 30);
+      if (textur.complete && textur.naturalWidth) {
+        const muster = ctx.createPattern(textur, 'repeat');
+        if (muster) {
+          muster.setTransform(new DOMMatrix().scale(24 / textur.naturalWidth, 12 / textur.naturalHeight));
+          ctx.fillStyle = muster;
+          ctx.fillRect(-30, -15, 60, 30);
+        }
+      }
+    };
+    const frostMalen = () => {
+      for (const [c, ctx] of [
+        [epFrost, fx],
+        [logoL, lx],
+      ] as const) {
+        if (!ctx) continue;
+        vorbereiten(c, ctx);
+        ctx.save();
+        if (c === epFrost) {
+          rink(ctx);
+          ctx.clip();
+        }
+        frostFuellen(ctx);
+        ctx.restore();
+      }
+    };
+    /** Vom zuletzt geputzten Stück bis zur Hinterkante wegradieren (klare Kante am Gummi), auf Eis und Logo */
+    const radieren = (von: number, bis: number) => {
+      if (bis <= von) return;
+      for (const ctx of [fx, lx]) {
+        if (!ctx) continue;
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = CW;
+        ctx.lineCap = 'butt';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        const start = Math.max(0, von - 0.15);
+        ctx.moveTo(...punkt(start));
+        for (let d = start + 0.25; d < bis; d += 0.25) ctx.lineTo(...punkt(d));
+        ctx.lineTo(...punkt(bis));
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+    /** Kurze nasse Spur hinter dem Gummi, nach hinten auslaufend (wie beim Team) */
+    /** hinten: Strecke der Hinterkante (Abzieher) auf dem Fahrweg */
+    const nassMalen = (hinten: number) => {
+      if (!nx) return;
+      nx.save();
+      nx.setTransform(1, 0, 0, 1, 0, 0);
+      nx.clearRect(0, 0, nassL.width, nassL.height);
+      nx.restore();
+      const von = Math.max(0, hinten - 4.5);
+      if (hinten - von < 0.5) return;
+      const links: [number, number][] = [];
+      const rechts: [number, number][] = [];
+      for (let d = von; d <= hinten + 0.01; d += 0.3) {
+        const [x, y] = punkt(d);
+        const [ax, ay] = punkt(d - 0.2);
+        const [bx, by] = punkt(d + 0.2);
+        const l = Math.hypot(bx - ax, by - ay) || 1;
+        const [qx, qy] = [(-(by - ay) / l) * (CW / 2), ((bx - ax) / l) * (CW / 2)];
+        links.push([x + qx, y + qy]);
+        rechts.push([x - qx, y - qy]);
+      }
+      const [kx, ky] = punkt(hinten);
+      const [ex, ey] = punkt(von);
+      const g = nx.createLinearGradient(kx, ky, ex, ey);
+      g.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+      g.addColorStop(0.06, 'rgba(225, 238, 252, 0.55)');
+      g.addColorStop(1, 'rgba(225, 238, 252, 0)');
+      nx.save();
+      rink(nx);
+      nx.clip();
+      nx.beginPath();
+      links.forEach(([x, y], i) => (i ? nx.lineTo(x, y) : nx.moveTo(x, y)));
+      rechts.reverse().forEach(([x, y]) => nx.lineTo(x, y));
+      nx.closePath();
+      nx.fillStyle = g;
+      nx.fill();
+      nx.restore();
+    };
+
+    let amAufbereiten = false;
+    const aufbereiten = () =>
+      new Promise<void>((fertig) => {
+        frostMalen();
+        if (nx) vorbereiten(nassL, nx);
+        nassL.style.opacity = '1';
+        epFeld.classList.add('am-aufbereiten');
+        // Rink-Mitte in der Ebene der Maschine; die Maschine bleibt übers ganze Logo sichtbar und läuft erst an
+        // dessen linkem Rand weich aus (dort endet links das sichtbare Eis)
+        const ebene = maschine.parentElement!;
+        const e = ebene.getBoundingClientRect();
+        const b = box.getBoundingClientRect();
+        const [mx, my] = [b.left - e.left + b.width / 2, b.top - e.top + b.height / 2];
+        const l = logoL.getBoundingClientRect();
+        const kante = l.left + l.width * 0.025 - e.left;
+        const maske = `linear-gradient(to right, transparent ${(kante - 8).toFixed(0)}px, #000 ${(kante + 14).toFixed(0)}px)`;
+        ebene.style.setProperty('mask-image', maske);
+        ebene.style.setProperty('-webkit-mask-image', maske);
+        let t0 = 0;
+        let geputzt = 0;
+        const start = 600; // Frost liegt, dann kommt die Maschine
+        const bild = (t: number) => {
+          t0 ||= t;
+          const sek = Math.max(0, t - t0 - start) / 1000;
+          const d = strecke(Math.min(sek, weg.dauer));
+          // Wie ein echtes Fahrzeug: Der Abzieher hinten läuft genau auf dem Fahrweg, die Maschine richtet sich nach
+          // einem Punkt weiter vorne aus (die Front schwenkt in die Kurve). So schliessen Klareis und Wasser
+          // lückenlos ans Heck an.
+          const hinten = d - HECK;
+          const [hx, hy] = punkt(hinten);
+          const [vx, vy] = punkt(hinten + L * 0.9);
+          const ra = Math.atan2(vy - hy, vx - hx);
+          const [x, y] = [hx + Math.cos(ra) * HECK, hy + Math.sin(ra) * HECK];
+          const winkel = (ra * 180) / Math.PI;
+          const m = k();
+          maschine.style.visibility = 'visible';
+          maschine.style.transform = `translate(${(mx + x * m - maschine.offsetWidth / 2).toFixed(1)}px, ${(my + y * m - maschine.offsetHeight / 2).toFixed(1)}px) rotate(${winkel.toFixed(1)}deg)`;
+          if (hinten > geputzt) {
+            radieren(geputzt, hinten);
+            geputzt = hinten;
+          }
+          nassMalen(hinten);
+          if (sek < weg.dauer) return void requestAnimationFrame(bild);
+          // Reste in den Ecken trocknen weg, dann laufen die Spielzüge weiter
+          maschine.style.visibility = '';
+          nassL.style.opacity = '0';
+          epFeld.classList.remove('am-aufbereiten');
+          window.setTimeout(fertig, 1200);
+        };
+        requestAnimationFrame(bild);
+      });
+    const putzpause = (an: boolean) => epFeld.dispatchEvent(new CustomEvent('wb-putzpause', { detail: an }));
+    document.querySelector('[data-lp-knopf]')?.addEventListener('click', () => {
+      if (amAufbereiten) return;
+      amAufbereiten = true;
+      // Frost sofort, gleichzeitig blenden die Spielzüge aus
+      putzpause(true);
+      aufbereiten().then(() => {
+        amAufbereiten = false;
+        putzpause(false);
+      });
+    });
+  }
+
+  // ---------- Hero: Spielzüge im Loop ----------
+  // Ruhiger Ablauf wie an der Taktiktafel: Magnet hebt sich, Linie zeichnet sich, Magnet setzt ab.
+  // Je nach Fensterbreite ist ein anderer Satz Züge sichtbar (breit / mittel / schmal, siehe CSS).
+  // Eigene kleine Uhr: läuft nur, solange das Feld sichtbar ist (sonst steht alles still).
+  const feld = document.querySelector<HTMLElement>('[data-feld]');
+  if (feld && !reduziert) {
+    const notiz = feld.querySelector<HTMLElement>('[data-tor-notiz]')!;
+    const titel = feld.querySelector<HTMLElement>('[data-zug-titel]');
+    const mqSchmal = window.matchMedia('(max-width: 600px)');
+    const setName = () => (mqSchmal.matches ? 'schmal' : 'breit');
+    // Rückennummern pro Spielzug zufällig aus dem Kader, damit niemand bevorzugt wird
+    const pool = (feld.dataset.nummern ?? '').split(',').filter(Boolean);
+    const mische = (sp: SVGGElement[]) => {
+      const rest = [...pool];
+      sp.forEach((e) => {
+        const t = e.querySelector('.sp-nr');
+        if (!t || rest.length === 0) return;
+        t.textContent = rest.splice(Math.floor(Math.random() * rest.length), 1)[0];
+      });
+    };
+
+    type Aufgabe = { start: number; dauer: number; fn: (p: number) => void; ease: (t: number) => number; fertig: () => void };
+    const aufgaben = new Set<Aufgabe>();
+    let uhr = 0;
+    let zuletzt = 0;
+    let laeuft = false;
+    let sichtbar = false;
+    const bild = (t: number) => {
+      if (!laeuft) return;
+      uhr += zuletzt ? Math.min(50, t - zuletzt) : 16;
+      zuletzt = t;
+      for (const a of [...aufgaben]) {
+        const p = Math.min(1, (uhr - a.start) / a.dauer);
+        a.fn(a.ease(p));
+        if (p >= 1) {
+          aufgaben.delete(a);
+          a.fertig();
+        }
+      }
+      requestAnimationFrame(bild);
+    };
+    const pruefe = () => {
+      const soll = sichtbar && !document.hidden && !putzpause;
+      if (soll && !laeuft) {
+        laeuft = true;
+        zuletzt = 0;
+        requestAnimationFrame(bild);
+      } else if (!soll) laeuft = false;
+      feld.classList.toggle('pausiert', !soll);
+    };
+    new IntersectionObserver((e) => {
+      sichtbar = e[0].isIntersecting;
+      pruefe();
+    }).observe(feld);
+    // Eis wird auf Klick aufbereitet: Spielzüge brechen ab und sind ausgeblendet; danach beginnt der Ablauf
+    // frisch auf dem sauberen Eis (offene Tweens werden verworfen, der alte Ablauf bleibt einfach stehen)
+    let putzpause = false;
+    feld.addEventListener('wb-putzpause', (e) => {
+      putzpause = (e as CustomEvent<boolean>).detail;
+      feld.classList.toggle('putzpause', putzpause);
+      if (putzpause) aufgaben.clear();
+      else ablauf(600);
+      pruefe();
+    });
+    document.addEventListener('visibilitychange', pruefe);
+
+    const linear = (t: number) => t;
+    const ausEase = (t: number) => 1 - Math.pow(1 - t, 3);
+    const einAus = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const tween = (dauer: number, fn: (p: number) => void, ease = linear) =>
+      new Promise<void>((fertig) => aufgaben.add({ start: uhr, dauer, fn, ease, fertig }));
+    const warte = (ms: number) => tween(ms, () => {});
+    const strich = (el: SVGElement, w: number) => (el.style.strokeDashoffset = String(w));
+    const zeichne = (el: SVGElement, ms: number, ease = einAus) => tween(ms, (p) => strich(el, 1 - p), ease);
+    const blende = (el: SVGElement | HTMLElement, ms: number, von: number, bis: number) =>
+      tween(ms, (p) => (el.style.opacity = String(von + (bis - von) * p)), einAus);
+
+    /** Ein Satz Züge mit seinen Spieler-Magneten */
+    const satz = (name: string) => {
+      const g = feld.querySelector<SVGGElement>(`.zset[data-set="${name}"]`)!;
+      const zuege = [...g.querySelectorAll<SVGGElement>('.zug')];
+      const sp = [...g.querySelectorAll<SVGGElement>('.sp')];
+      const lage = sp.map(() => [0, 0]);
+      const setze = (i: number, x: number, y: number) => {
+        lage[i] = [x, y];
+        sp[i].setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+      };
+      const hub = (i: number, v: number) => sp[i].style.setProperty('--hub', v.toFixed(3));
+      const posVon = (z: SVGGElement) => z.dataset.pos!.split(';').map((t) => t.split(',').map(Number));
+      return { name, zuege, sp, lage, setze, hub, posVon };
+    };
+    type Satz = ReturnType<typeof satz>;
+
+    const leeren = (z: SVGGElement) => {
+      z.style.opacity = '1';
+      z.querySelectorAll<SVGElement>('.zm, .s-linie[pathLength]').forEach((el) => {
+        el.style.strokeDasharray = '1 2';
+        strich(el, 1);
+      });
+      z.querySelectorAll<SVGPathElement>('.s-linie[data-maske]').forEach((el) => {
+        const m = document.querySelector<SVGPathElement>(`#${el.dataset.maske} path`)!;
+        m.style.strokeDasharray = '1 2';
+        strich(m, 1);
+      });
+      z.querySelectorAll<SVGElement>('.s-spitze').forEach((el) => (el.style.opacity = '0'));
+    };
+
+    /** Tor: Netz zappelt, «Tor!» erscheint über dem Tor */
+    /** Tor: Ist das Tor im Bild, zappelt das Netz und «Tor!» steht darüber; sonst steht «Tor!» beim Pfeil am Rand */
+    const tor = async (spitzeEl: SVGElement) => {
+      const grafik = feld.querySelector<SVGGElement>('[data-tor-grafik]')!;
+      const netz = grafik.querySelector<SVGGElement>('.netz')!;
+      const f = feld.getBoundingClientRect();
+      const r = grafik.getBoundingClientRect();
+      const sichtbarTor = r.right <= f.right + 1 && r.left >= f.left;
+      const ziel = sichtbarTor ? r : spitzeEl.getBoundingClientRect();
+      const x = Math.min(f.width - 48, Math.max(48, ziel.left + ziel.width / 2 - f.left - (sichtbarTor ? (f.width < 601 ? 2 : 18) : 30)));
+      const ueber = f.width < 601 ? 40 : 64;
+      const y = Math.min(f.height - 50, Math.max(4, ziel.top - f.top - (sichtbarTor ? ueber : 52)));
+      notiz.style.left = `${x}px`;
+      notiz.style.top = `${y}px`;
+      notiz.classList.remove('zeigen');
+      void notiz.offsetWidth;
+      notiz.classList.add('zeigen');
+      await tween(
+        800,
+        (p) => {
+          const a = Math.sin(p * Math.PI * 6) * (1 - p);
+          netz.setAttribute(
+            'transform',
+            `translate(265 0) scale(${(1 + a * 0.22).toFixed(3)} ${(1 - a * 0.1).toFixed(3)}) skewY(${(a * 9).toFixed(2)}) translate(-265 0)`,
+          );
+        },
+        linear,
+      );
+      netz.removeAttribute('transform');
+    };
+
+    const spiele = async (s: Satz, z: SVGGElement) => {
+      leeren(z);
+      z.classList.remove('zug-aus');
+      if (titel) titel.textContent = z.dataset.titel ?? '';
+      feld.classList.add('titel-an');
+      const gegner = [...z.querySelectorAll<SVGElement>('.zm')];
+      gegner.forEach((m, i) => warte(i * 160).then(() => zeichne(m, 420, ausEase)));
+      await warte(gegner.length * 160 + 700);
+
+      for (const st of z.querySelectorAll<SVGGElement>('.schritt')) {
+        const i = Number(st.dataset.spieler);
+        const linien = [...st.querySelectorAll<SVGPathElement>('.s-linie')];
+        const spitzeEl = st.querySelector<SVGElement>('.s-spitze')!;
+        await tween(300, (p) => s.hub(i, 1 + 0.16 * p), ausEase);
+        await warte(140);
+        if (st.dataset.art === 'lauf') {
+          const maske = document.querySelector<SVGPathElement>(`#${linien[0].dataset.maske} path`)!;
+          await tween(950, (p) => strich(maske, 1 - p), einAus);
+          await blende(spitzeEl, 180, 0, 1);
+          const weg = st.querySelector<SVGPathElement>('.s-weg')!;
+          const l = weg.getTotalLength();
+          await tween(
+            900,
+            (p) => {
+              const pt = weg.getPointAtLength(p * l);
+              s.setze(i, pt.x, pt.y);
+            },
+            einAus,
+          );
+        } else if (st.dataset.art === 'pass') {
+          await zeichne(linien[0], 760);
+          await blende(spitzeEl, 180, 0, 1);
+        } else {
+          await Promise.all(linien.map((l) => zeichne(l, 520, (t) => t * t)));
+          await blende(spitzeEl, 140, 0, 1);
+          tor(spitzeEl);
+        }
+        await tween(320, (p) => s.hub(i, 1.16 - 0.16 * p), ausEase);
+        await warte(st.dataset.art === 'schuss' ? 2200 : 480);
+      }
+    };
+
+    /** Wechsel: Linien und X blenden aus, die Magnete gleiten an die Startplätze des nächsten Zugs */
+    const wechsel = async (s: Satz, alt: SVGGElement, neu: SVGGElement) => {
+      notiz.classList.remove('zeigen');
+      feld.classList.remove('titel-an');
+      const start = s.lage.map((p) => [...p]);
+      const ziel = s.posVon(neu);
+      // Magnete kurz abblenden und neue Nummern ziehen
+      await Promise.all(s.sp.map((e) => blende(e, 260, 1, 0.15)));
+      mische(s.sp);
+      s.sp.forEach((e) => blende(e, 320, 0.15, 1));
+      await Promise.all([
+        blende(alt, 550, 1, 0),
+        warte(200).then(() =>
+          tween(
+            1200,
+            (p) => ziel.forEach((q, i) => s.setze(i, start[i][0] + (q[0] - start[i][0]) * p, start[i][1] + (q[1] - start[i][1]) * p)),
+            einAus,
+          ),
+        ),
+      ]);
+      alt.classList.add('zug-aus');
+      await warte(800);
+    };
+
+    const vorbereiten = (s: Satz) => {
+      s.zuege.forEach((z) => {
+        leeren(z);
+        z.classList.add('zug-aus');
+      });
+      s.posVon(s.zuege[0]).forEach(([x, y], i) => s.setze(i, x, y));
+      s.sp.forEach((e) => (e.style.opacity = '0'));
+    };
+
+    /** Ablauf der Spielzüge von vorne: alles zurücksetzen, kurz warten, dann Zug um Zug */
+    const ablauf = async (vorlauf: number) => {
+      ['breit', 'schmal'].forEach((n) => vorbereiten(satz(n)));
+      notiz.classList.remove('zeigen');
+      feld.classList.remove('titel-an');
+      feld.querySelector('.netz')?.removeAttribute('transform');
+      await warte(vorlauf);
+      for (;;) {
+        const s = satz(setName());
+        vorbereiten(s);
+        mische(s.sp);
+        s.sp.forEach((e, i) =>
+          warte(i * 140).then(() =>
+            tween(
+              460,
+              (p) => {
+                e.style.opacity = String(Math.min(1, p * 2));
+                s.hub(i, 1.3 - 0.3 * p);
+              },
+              ausEase,
+            ),
+          ),
+        );
+        await warte(s.sp.length * 140 + 700);
+        // Satz abspielen, bis die Fensterbreite einen anderen verlangt
+        for (let i = 0; setName() === s.name; i = (i + 1) % s.zuege.length) {
+          await spiele(s, s.zuege[i]);
+          await wechsel(s, s.zuege[i], s.zuege[(i + 1) % s.zuege.length]);
+        }
+        notiz.classList.remove('zeigen');
+      }
+    };
+    feld.classList.add('animiert');
+    ablauf(1500); // Linien des Feldes zeichnen sich zuerst
+  }
+</script>

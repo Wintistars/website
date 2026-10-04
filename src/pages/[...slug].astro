@@ -1,13 +1,26 @@
 ---
 // Allgemeine Seiten (Club, Kontakt, …): alle Dokumente vom Typ "seite" ausser "home".
+// Club ergänzt Eckdaten und Erfolge, Kontakt das Kontaktformular.
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import SeiteInhalt from '../components/content/SeiteInhalt.astro';
-import { getSeiten } from '../lib/sanity';
+import SektionKopf from '../components/SektionKopf.astro';
+import SanityPicture from '../components/SanityPicture.astro';
+import RichText from '../components/richtext/RichText.astro';
+import Erfolge from '../components/club/Erfolge.astro';
+import Fakten from '../components/club/Fakten.astro';
+import Kontakt from '../components/club/Kontakt.astro';
+import { getSeiten, getTeam, getVerein } from '../lib/sanity';
 import type { Seite } from '../lib/types';
 
 export const getStaticPaths = (async () => {
   const seiten = await getSeiten();
+  // Club und Kontakt sind in der Navigation verlinkt: auch ohne Sanity-Seite eine Seite erzeugen.
+  for (const [slug, titel] of [
+    ['club', 'Club'],
+    ['kontakt', 'Kontakt'],
+  ]) {
+    if (!seiten.some((s) => s.slug === slug)) seiten.push({ _id: slug, slug, titel });
+  }
   return seiten.map((seite) => ({ params: { slug: seite.slug }, props: { seite } }));
 }) satisfies GetStaticPaths;
 
@@ -16,8 +29,55 @@ interface Props {
 }
 
 const { seite } = Astro.props;
+const istClub = seite.slug === 'club';
+const istKontakt = seite.slug === 'kontakt';
+const [verein, team] = await Promise.all([getVerein(), istClub ? getTeam() : null]);
+const erfolge = team?.erfolge ?? [];
+const KICKER: Record<string, string> = { club: 'Club', kontakt: 'Mitspielen?' };
 ---
 
-<BaseLayout title={seite.titel}>
-  <SeiteInhalt seite={seite} />
+<BaseLayout title={seite.titel} description={seite.einleitung}>
+  <article class="seite wrap" id={istKontakt ? 'kontakt' : undefined}>
+    <SektionKopf kicker={KICKER[seite.slug] ?? 'EHC Wintistars'} titel={seite.titel} id="seite-titel" ebene={1}>
+      {seite.einleitung && <p class="seite-lead">{seite.einleitung}</p>}
+    </SektionKopf>
+    <SanityPicture
+      image={seite.titelbild}
+      ratio={21 / 9}
+      widths={[640, 960, 1440, 1920]}
+      sizes="(min-width: 1240px) 1160px, 100vw"
+      eager
+      class="titelbild"
+    />
+    {
+      istClub ? (
+        <div class="seite-raster">
+          <div>
+            <div class="prose">
+              <RichText value={seite.body} />
+            </div>
+            <Fakten fakten={verein?.fakten ?? []} />
+          </div>
+          <Erfolge erfolge={erfolge} verzoegerung={120} />
+        </div>
+      ) : (
+        <div class="prose">
+          <RichText value={seite.body} />
+        </div>
+      )
+    }
+    {
+      istKontakt && (
+        <div class="kontakt-abstand">
+          <Kontakt verein={verein} />
+        </div>
+      )
+    }
+  </article>
 </BaseLayout>
+
+<style>
+  .kontakt-abstand {
+    margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  }
+</style>

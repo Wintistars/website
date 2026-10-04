@@ -1,0 +1,52 @@
+---
+// Galerie: alle Alben aus Sanity (Galerie), neuste zuerst.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SektionKopf from '../components/SektionKopf.astro';
+import Galerie from '../components/Galerie.astro';
+import { getAlben } from '../lib/sanity';
+import { zuFoto } from '../lib/galerie';
+import { formatDatum } from '../lib/format';
+import { VEREIN } from '../lib/verein';
+
+const alben = await getAlben();
+---
+
+<BaseLayout title="Galerie" description={`Fotos vom ${VEREIN}`}>
+  <div class="seite wrap">
+    <SektionKopf kicker="Bilder" titel="Galerie" id="galerie-titel" ebene={1} />
+    {alben.length === 0 && <p class="blatt leer-blatt">Noch keine Fotos. Bilder folgen.</p>}
+    {
+      alben.map((a, i) => (
+        <section class="album" aria-labelledby={`album-${i}`}>
+          <div class="album-kopf">
+            <h2 class="h3" id={`album-${i}`}>
+              {a.titel}
+            </h2>
+            {a.datum && <p class="album-datum">{formatDatum(a.datum)}</p>}
+            {a.beschreibung && <p class="album-text">{a.beschreibung}</p>}
+          </div>
+          <Galerie fotos={a.bilder.map(zuFoto)} raster />
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .album + .album {
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+  }
+  .album-kopf {
+    margin-bottom: 1.2rem;
+  }
+  .album-datum {
+    margin-top: 0.3rem;
+    font-size: 0.9rem;
+    color: var(--ink-3);
+  }
+  .album-text {
+    max-width: 42rem;
+    margin-top: 0.5rem;
+    color: var(--ink-2);
+  }
+</style>
