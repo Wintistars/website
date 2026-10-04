@@ -10,7 +10,6 @@ export interface KaderSpieler {
   nummer: number;
   position?: SpielerPosition;
   funktion?: string;
-  slug?: string;
   /** Porträt-URL, sonst Platzhalter (Silhouette/Nummer) */
   bild?: string;
 }
@@ -35,7 +34,6 @@ export function zuKaderSpieler(s: Spieler): KaderSpieler {
     nummer: s.nummer ?? 0,
     position: s.position,
     funktion: s.funktion,
-    slug: s.slug,
     bild: s.portrait?.asset ? imageUrl(s.portrait, 600, 800) : undefined,
   };
 }

@@ -86,14 +86,12 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
               </h3>
               <ul class="kt-liste">
                 {g.spieler.map((s) => {
-                  // Ohne JS: Link aufs Profil (falls vorhanden); mit JS öffnet ein Klick die Spielerkarte
-                  const Tag = s.slug ? 'a' : 'button';
+                  // Ein Klick öffnet die Spielerkarte (Porträt, Nummer, Position, Funktion)
                   return (
                     <li style={`--i:${rang.get(s)}`}>
-                      <Tag
+                      <button
                         class="kt-spieler"
-                        href={s.slug ? `/spieler/${s.slug}/` : undefined}
-                        type={s.slug ? undefined : 'button'}
+                        type="button"
                         aria-haspopup="dialog"
                         data-kt
                         data-rang={rang.get(s)}
@@ -104,7 +102,6 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
                         data-funktion={s.funktion}
                         data-rolle={farbe(s)}
                         data-bild={s.bild}
-                        data-slug={s.slug}
                       >
                         <span class:list={['kt-magnet', `kt-${farbe(s)}`, { 'kt-bild': !!s.bild }]} aria-hidden="true">
                           {s.bild && <img src={s.bild} alt="" loading="lazy" decoding="async" width="600" height="800" />}
@@ -114,7 +111,7 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
                           <span class="sr">{s.nummer > 0 ? `Nummer ${s.nummer}, ` : ''}</span>
                           <span class="kt-vorname">{s.vorname}</span> <span class="kt-nachname">{s.name}</span>
                         </span>
-                      </Tag>
+                      </button>
                     </li>
                   );
                 })}
@@ -154,7 +151,6 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
             </h3>
             <p class="ktd-funktion" data-ktd-funktion hidden></p>
             <p class="sr" data-ktd-nr-sr></p>
-            <a class="ktd-link" data-ktd-link href="/team/" hidden>Zum Spielerprofil <span aria-hidden="true">→</span></a>
             <div class="ktd-nav">
               <button type="button" class="ktd-pfeil" data-ktd-zurueck aria-label="Vorheriger Spieler">
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7" /></svg>
@@ -371,7 +367,6 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
     const el = <T extends Element = HTMLElement>(sel: string) => ktDialog.querySelector<T>(sel)!;
     const img = el<HTMLImageElement>('[data-ktd-img]');
     const platz = el('[data-ktd-platz]');
-    const link = el<HTMLAnchorElement>('[data-ktd-link]');
     let index = 0;
     let opener: HTMLElement | null = null;
 
@@ -399,10 +394,6 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
         img.removeAttribute('src');
         platz.hidden = false;
       }
-      if (d.slug) {
-        link.href = `/spieler/${d.slug}/`;
-        link.hidden = false;
-      } else link.hidden = true;
       el('[data-ktd-zaehler]').textContent = `${index + 1} / ${spieler.length}`;
     };
 

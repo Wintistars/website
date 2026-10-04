@@ -23,7 +23,7 @@ GitHub-Secrets: `SANITY_AUTH_TOKEN` (Studio-Deploy), `CLOUDFLARE_DEPLOY_HOOK` (t
 ## Struktur
 
 - `studio/schemaTypes/` – Content-Modell (Quelle der Wahrheit); `fields.ts` = gemeinsame Felder (Bild, Rich Text, Slug)
-- `src/lib/sanity.ts` – Sanity-Client und alle GROQ-Abfragen (`getNews`, `getTeam`, `getSpieler`, `getSeiten`, `getHome`, `getSpiele`, `getSpielplanEinstellungen`, `getVerein`, `getAlben`)
+- `src/lib/sanity.ts` – Sanity-Client und alle GROQ-Abfragen (`getNews`, `getTeam`, `getSeiten`, `getHome`, `getSpiele`, `getSpielplanEinstellungen`, `getVerein`, `getAlben`)
 - `src/lib/sihf.ts` + `src/lib/spielplan.ts` – Spielplan: SIHF-Export (Meisterschaft) + Sanity-Spiele; Zeiten immer über `src/lib/zeit.ts` (Europe/Zurich)
 - `src/lib/types.ts` – TS-Typen passend zu den GROQ-Projektionen
 - `src/lib/verein.ts` – fester Teamname `VEREIN` («EHC Wintistars») für Team-Seite, Spielplan, Kalender
@@ -39,7 +39,7 @@ GitHub-Secrets: `SANITY_AUTH_TOKEN` (Studio-Deploy), `CLOUDFLARE_DEPLOY_HOOK` (t
 - `src/lib/logo.ts` – Pfad zum Logo (noch Rasterbild-Platzhalter; beim Vektor-Logo nur hier ändern)
 - `src/components/richtext/` – Portable Text (Rich Text) inkl. Bildern
 - `functions/api/kontakt.ts` – Cloudflare Pages Function für das Kontaktformular (Versand über Resend)
-- `src/pages/` – Routen: `/`, `/news/`, `/news/[slug]`, `/team`, `/spieler/[slug]`, `/spielplan`, `/spielplan.ics`,
+- `src/pages/` – Routen: `/`, `/news/`, `/news/[slug]`, `/team`, `/spielplan`, `/spielplan.ics`,
   `/galerie`, `/[...slug]` (Typ `seite`; `club` und `kontakt` werden auch ohne Sanity-Seite erzeugt)
 
 ## Konventionen
