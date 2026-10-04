@@ -844,7 +844,7 @@ const HF_PUNKTE: P[] = [
             </dl>
             <div class="ueber-cta">
               <a class="knopf knopf-voll" href="/club/">Zum Club</a>
-              <a class="knopf" href="/kontakt/">Kontakt</a>
+              <a class="knopf" href="#kontakt">Kontakt</a>
             </div>
           </div>
 
@@ -904,6 +904,73 @@ const HF_PUNKTE: P[] = [
           </section>
         )
       }
+
+      <!-- KONTAKT -->
+      <section class="sektion wrap" id="kontakt" aria-labelledby="kontakt-titel">
+        <div class="sek-kopf">
+          <div class="wisch" data-rv>
+            <div class="wisch-inhalt">
+              <p class="kicker">Mitspielen?</p>
+              <h2 id="kontakt-titel" class="h2">Kontakt</h2>
+            </div>
+          </div>
+        </div>
+        <div class="kontakt-grid">
+          <div class="kontakt-karte blatt">
+            <p class="kontakt-lead">Interesse, bei uns mitzuspielen? Oder eine Frage zum Club? Schreib uns.</p>
+            <form class="kontakt-form" data-kontakt-form action="#" method="post" novalidate>
+              <div class="kf-zeile">
+                <div class="kf-feld">
+                  <label for="kf-name">Name <span class="kf-pflicht" aria-hidden="true">*</span></label>
+                  <input id="kf-name" name="name" type="text" autocomplete="name" required />
+                  <p class="kf-fehler" id="kf-name-fehler" hidden>Bitte gib deinen Namen an.</p>
+                </div>
+                <div class="kf-feld">
+                  <label for="kf-mail">E-Mail <span class="kf-pflicht" aria-hidden="true">*</span></label>
+                  <input id="kf-mail" name="email" type="email" autocomplete="email" inputmode="email" required />
+                  <p class="kf-fehler" id="kf-mail-fehler" hidden>Bitte gib eine gültige E-Mail-Adresse an.</p>
+                </div>
+              </div>
+              <div class="kf-feld">
+                <label for="kf-betreff">Betreff</label>
+                <input id="kf-betreff" name="betreff" type="text" autocomplete="off" />
+              </div>
+              <div class="kf-feld">
+                <label for="kf-nachricht">Nachricht <span class="kf-pflicht" aria-hidden="true">*</span></label>
+                <textarea id="kf-nachricht" name="nachricht" rows="5" required></textarea>
+                <p class="kf-fehler" id="kf-nachricht-fehler" hidden>Bitte schreib uns eine Nachricht.</p>
+              </div>
+              <div class="kf-fuss">
+                <p class="kf-hinweis"><span aria-hidden="true">*</span> Pflichtfeld</p>
+                <button class="knopf knopf-voll" type="submit">Senden</button>
+              </div>
+              <p class="kf-danke" data-kontakt-danke role="status" hidden>
+                Danke! (Entwurf: Das Formular wird nach der Design-Wahl angebunden.)
+              </p>
+            </form>
+          </div>
+          <aside class="kontakt-info" aria-label="Gut zu wissen">
+            <dl>
+              <div>
+                <dt>Meisterschaft</dt>
+                <dd>Kunsteisbahn Frauenfeld, Conte Hockey Cup</dd>
+              </div>
+              <div>
+                <dt>Plauschspiele</dt>
+                <dd>Eishalle Deutweg, Winterthur</dd>
+              </div>
+              <div>
+                <dt>Saison</dt>
+                <dd>Oktober bis April</dd>
+              </div>
+            </dl>
+            <a class="kontakt-ics" href="/spielplan.ics">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2Zm12 8H5v9h14v-9Z"></path></svg>
+              Spielplan als Kalender abonnieren
+            </a>
+          </aside>
+        </div>
+      </section>
     </main>
 
     <!-- FUSS -->
@@ -1343,6 +1410,38 @@ const HF_PUNKTE: P[] = [
     // Klick auf den abgedunkelten Hintergrund schliesst
     ktDialog.addEventListener('click', (e) => {
       if (e.target === ktDialog) schliessen();
+    });
+  }
+
+  // ---------- Kontaktformular (Entwurf: sendet nichts) ----------
+  const kForm = document.querySelector<HTMLFormElement>('[data-kontakt-form]');
+  if (kForm) {
+    const danke = kForm.querySelector<HTMLElement>('[data-kontakt-danke]')!;
+    const felder = [...kForm.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea')];
+    const pruefe = (f: HTMLInputElement | HTMLTextAreaElement) => {
+      const fehler = kForm.querySelector<HTMLElement>(`#${f.id}-fehler`);
+      if (!fehler) return true;
+      const ok = f.checkValidity();
+      fehler.hidden = ok;
+      f.toggleAttribute('aria-invalid', !ok);
+      if (ok) f.removeAttribute('aria-describedby');
+      else f.setAttribute('aria-describedby', fehler.id);
+      return ok;
+    };
+    felder.forEach((f) => {
+      f.addEventListener('blur', () => f.value && pruefe(f));
+      f.addEventListener('input', () => f.hasAttribute('aria-invalid') && pruefe(f));
+    });
+    kForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const falsch = felder.filter((f) => !pruefe(f));
+      if (falsch.length) {
+        danke.hidden = true;
+        falsch[0].focus();
+        return;
+      }
+      danke.hidden = false;
+      kForm.reset();
     });
   }
 </script>
@@ -3461,6 +3560,150 @@ const HF_PUNKTE: P[] = [
     text-transform: uppercase;
   }
 
+  /* ================= Kontakt ================= */
+  .kontakt-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+    align-items: start;
+  }
+  .kontakt-karte {
+    padding: clamp(1.3rem, 3vw, 2rem);
+  }
+  .kontakt-lead {
+    max-width: 34rem;
+    font-size: 1.05rem;
+    color: var(--ink-2);
+  }
+  .kontakt-form {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.4rem;
+  }
+  .kf-zeile {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .kf-feld {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .kf-feld label {
+    font: 650 0.78rem/1.2 var(--f-text);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .kf-pflicht {
+    color: var(--orange-text);
+  }
+  .kf-feld input,
+  .kf-feld textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 0.7rem 0.85rem;
+    border: 1.5px solid rgb(28 34 50 / 0.2);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ink);
+    font: 400 1rem/1.4 var(--f-text);
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
+  }
+  .kf-feld textarea {
+    resize: vertical;
+    min-height: 8rem;
+  }
+  .kf-feld input:hover,
+  .kf-feld textarea:hover {
+    border-color: rgb(28 34 50 / 0.35);
+  }
+  .kf-feld input:focus-visible,
+  .kf-feld textarea:focus-visible {
+    outline: none;
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgb(185 97 42 / 0.35);
+  }
+  .kf-feld [aria-invalid] {
+    border-color: var(--rot);
+  }
+  .kf-fehler {
+    font-size: 0.85rem;
+    color: #b0221c;
+  }
+  .kf-fuss {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem 1rem;
+    margin-top: 0.2rem;
+  }
+  .kf-hinweis {
+    font-size: 0.82rem;
+    color: var(--ink-3);
+  }
+  .kf-danke {
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    background: rgb(29 122 69 / 0.1);
+    color: #165c34;
+    font-weight: 600;
+  }
+  .kf-danke[hidden],
+  .kf-fehler[hidden] {
+    display: none;
+  }
+  .kontakt-info {
+    padding-top: 0.4rem;
+  }
+  .kontakt-info dl {
+    border-top: 2px solid var(--navy);
+  }
+  .kontakt-info dl > div {
+    padding-block: 0.85rem;
+    border-bottom: 1px solid var(--linie);
+  }
+  .kontakt-info dt {
+    font: 650 0.7rem/1.2 var(--f-text);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .kontakt-info dd {
+    margin-top: 0.25rem;
+    font-weight: 600;
+  }
+  .kontakt-ics {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-block: 0.75rem;
+    color: var(--navy);
+    font-weight: 650;
+    text-decoration: underline;
+    text-decoration-color: var(--orange);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  @media (max-width: 860px) {
+    .kontakt-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 520px) {
+    .kf-zeile {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .kf-fuss .knopf {
+      width: 100%;
+      justify-content: center;
+    }
+  }
   /* ================= Fuss ================= */
   .fuss::before {
     content: '';

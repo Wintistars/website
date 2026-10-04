@@ -556,6 +556,72 @@ const letztesAusgang = letztes ? ausgang(letztes) : undefined;
           </section>
         )
       }
+
+      <!-- KONTAKT -->
+      <section class="wrap sektion" id="kontakt" aria-labelledby="kontakt-titel">
+        <div class="sek-kopf rv">
+          <div>
+            <p class="label">Mitspielen?</p>
+            <h2 id="kontakt-titel" class="h2">Kontakt</h2>
+          </div>
+        </div>
+        <div class="kontakt-grid">
+          <div class="tile kontakt-form-tile rv">
+            <p class="lead kontakt-lead">Interesse, bei uns mitzuspielen? Oder eine Frage zum Club? Schreib uns.</p>
+            <form class="kontakt-form" data-kontakt action="#" method="post">
+              <div class="feld">
+                <label for="k-name">Name <span class="pflicht" aria-hidden="true">*</span></label>
+                <input id="k-name" name="name" type="text" autocomplete="name" required />
+              </div>
+              <div class="feld">
+                <label for="k-mail">E-Mail <span class="pflicht" aria-hidden="true">*</span></label>
+                <input id="k-mail" name="email" type="email" autocomplete="email" inputmode="email" required />
+              </div>
+              <div class="feld feld-breit">
+                <label for="k-betreff">Betreff</label>
+                <input id="k-betreff" name="betreff" type="text" autocomplete="off" />
+              </div>
+              <div class="feld feld-breit">
+                <label for="k-nachricht">Nachricht <span class="pflicht" aria-hidden="true">*</span></label>
+                <textarea id="k-nachricht" name="nachricht" rows="5" required></textarea>
+              </div>
+              <div class="feld-breit kontakt-fuss">
+                <p class="klein"><span aria-hidden="true">*</span> Pflichtfeld</p>
+                <button type="submit" class="btn btn-senden">
+                  Senden
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </button>
+              </div>
+              <div class="feld-breit kontakt-danke" role="status" aria-live="polite" data-kontakt-danke hidden>
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <p>Danke! (Entwurf: Das Formular wird nach der Design-Wahl angebunden.)</p>
+              </div>
+            </form>
+          </div>
+
+          <aside class="tile kontakt-info rv" style="--d:100ms" aria-label="Spielorte und Saison">
+            <p class="label">Gut zu wissen</p>
+            <dl class="kontakt-fakten">
+              <div>
+                <dt>Meisterschaft</dt>
+                <dd>Kunsteisbahn Frauenfeld<span>Conte Hockey Cup</span></dd>
+              </div>
+              <div>
+                <dt>Plauschspiele</dt>
+                <dd>Eishalle Deutweg, Winterthur</dd>
+              </div>
+              <div>
+                <dt>Saison</dt>
+                <dd>Oktober bis April</dd>
+              </div>
+            </dl>
+            <a class="btn btn-akzent kontakt-ics" href="/spielplan.ics">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2Zm12 8H5v9h14v-9Z"></path></svg>
+              Spielplan als Kalender abonnieren
+            </a>
+          </aside>
+        </div>
+      </section>
     </main>
 
     <footer class="fuss">
@@ -609,6 +675,24 @@ const letztesAusgang = letztes ? ausgang(letztes) : undefined;
   });
   window.matchMedia('(min-width: 821px)').addEventListener('change', (e) => {
     if (e.matches && kopf?.hasAttribute('data-offen')) setzeMenu(false, false);
+  });
+
+  // --- Kontaktformular (Entwurf: sendet nichts) ---
+  const kontakt = document.querySelector<HTMLFormElement>('[data-kontakt]');
+  const danke = document.querySelector<HTMLElement>('[data-kontakt-danke]');
+  kontakt?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!kontakt.checkValidity()) return;
+    kontakt.reset();
+    if (danke) {
+      danke.hidden = false;
+      danke.classList.remove('neu');
+      void danke.offsetWidth;
+      danke.classList.add('neu');
+    }
+  });
+  kontakt?.addEventListener('input', () => {
+    if (danke) danke.hidden = true;
   });
 
   // --- Countdown zum nächsten Spiel ---
@@ -2191,6 +2275,178 @@ const letztesAusgang = letztes ? ausgang(letztes) : undefined;
     color: var(--akzent-text);
     text-transform: uppercase;
     letter-spacing: 0.08em;
+  }
+
+  /* ============ Kontakt ============ */
+  .kontakt-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: var(--gap);
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .kontakt-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .kontakt-form-tile {
+    padding: clamp(1.3rem, 3.5vw, 2.5rem);
+  }
+  .kontakt-lead {
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+  .kontakt-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  @media (max-width: 560px) {
+    .kontakt-form {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .feld-breit {
+    grid-column: 1 / -1;
+  }
+  .feld {
+    display: grid;
+    gap: 0.4rem;
+  }
+  .feld label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .pflicht {
+    color: var(--akzent-text);
+  }
+  .feld input,
+  .feld textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+    padding: 0.8rem 1rem;
+    border-radius: var(--r-s);
+    border: 1.5px solid var(--linie);
+    background: var(--hover);
+    transition:
+      border-color 0.2s,
+      background 0.2s,
+      box-shadow 0.2s;
+  }
+  .feld textarea {
+    resize: vertical;
+    min-height: 8rem;
+  }
+  .feld input:hover,
+  .feld textarea:hover {
+    border-color: rgb(28 34 50 / 0.3);
+  }
+  .c .feld input:focus-visible,
+  .c .feld textarea:focus-visible {
+    outline: none;
+    border-color: var(--orange);
+    background: var(--karte);
+    box-shadow: 0 0 0 4px rgb(185 97 42 / 0.22);
+  }
+  .feld input:user-invalid,
+  .feld textarea:user-invalid {
+    border-color: var(--niederlage);
+    box-shadow: 0 0 0 3px rgb(192 39 31 / 0.12);
+  }
+  .kontakt-fuss {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.25rem;
+  }
+  .btn-senden {
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    padding: 0.85rem 1.5rem;
+  }
+  .btn-senden svg {
+    transition: transform 0.3s var(--ease);
+  }
+  .btn-senden:hover svg {
+    transform: translateX(4px);
+  }
+  .kontakt-danke {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 1rem 1.1rem;
+    border-radius: var(--r-s);
+    background: rgb(26 116 67 / 0.1);
+    border: 1px solid rgb(26 116 67 / 0.3);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .kontakt-danke svg {
+    flex: none;
+    color: var(--sieg);
+  }
+  .kontakt-danke[hidden] {
+    display: none;
+  }
+  .kontakt-danke:global(.neu) {
+    animation: auf 0.4s var(--ease);
+  }
+  .kontakt-info {
+    display: grid;
+    gap: 1.1rem;
+    padding: clamp(1.3rem, 3.5vw, 2.2rem);
+    background: var(--solid);
+    border-color: transparent;
+    color: #fff;
+  }
+  .kontakt-info .label {
+    color: var(--sand);
+  }
+  .kontakt-info::after {
+    content: '';
+    position: absolute;
+    right: -70px;
+    bottom: -70px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 3px solid rgb(212 46 39 / 0.45);
+    pointer-events: none;
+  }
+  .kontakt-fakten div {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid rgb(255 255 255 / 0.14);
+  }
+  .kontakt-fakten dt {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgb(255 255 255 / 0.7);
+  }
+  .kontakt-fakten dd {
+    font-weight: 700;
+    font-size: 1.02rem;
+  }
+  .kontakt-fakten dd span {
+    display: block;
+    font-weight: 500;
+    font-size: 0.88rem;
+    color: rgb(255 255 255 / 0.75);
+  }
+  .kontakt-ics {
+    position: relative;
+    z-index: 1;
   }
 
   /* ============ Club ============ */

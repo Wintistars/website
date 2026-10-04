@@ -45,7 +45,7 @@ const ENTWUERFE = [
         '/spielplan/': '#spiele',
         '/club/': '#club',
         '/galerie/': '#galerie',
-        '/kontakt/': 'footer',
+        '/kontakt/': '#kontakt',
       };
       const hinweis = document.querySelector<HTMLElement>('.entwurf-hinweis');
       let timer: number | undefined;
@@ -72,7 +72,9 @@ const ENTWUERFE = [
         if (ziel.origin !== location.origin) return;
         if (ziel.pathname.startsWith('/entwurf/') || ziel.pathname.endsWith('.ics') || ziel.pathname === location.pathname) return;
         event.preventDefault();
-        const abschnitt = ABSCHNITT[ziel.pathname] && document.querySelector(ABSCHNITT[ziel.pathname]);
+        const sel = ABSCHNITT[ziel.pathname];
+        // Fallback für Kontakt: Footer, solange ein Entwurf keinen Kontakt-Abschnitt hat.
+        const abschnitt = sel && (document.querySelector(sel) ?? (sel === '#kontakt' ? document.querySelector('footer') : null));
         if (abschnitt) {
           schliesseMenues();
           const ruhig = matchMedia('(prefers-reduced-motion: reduce)').matches;
