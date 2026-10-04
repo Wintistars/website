@@ -1,0 +1,8 @@
+# Cloudflare Pages: frühere Unterseiten, die jetzt Abschnitte der Startseite sind
+/team /#team 301
+/team/ /#team 301
+/kontakt /#kontakt 301
+/kontakt/ /#kontakt 301
+/spieler/* /#team 301
+/club /#club 301
+/club/ /#club 301

@@ -8,7 +8,7 @@ import '@fontsource/permanent-marker';
 import '../styles/site.css';
 import Magnet from '../components/Magnet.astro';
 import Eismaschine from '../components/Eismaschine.astro';
-import { NAVIGATION } from '../lib/navigation';
+import { abschnittLink, NAVIGATION } from '../lib/navigation';
 import { getVerein } from '../lib/sanity';
 import { getNaechstesSpiel } from '../lib/spielplan';
 import { GRUENDUNGSJAHR, VEREIN } from '../lib/verein';
@@ -29,8 +29,9 @@ const pfad = Astro.url.pathname;
 
 const [naechstes, verein] = await Promise.all([getNaechstesSpiel(), getVerein()]);
 const kurzDatum = (d: Date) => d.toLocaleDateString('de-CH', { timeZone: ZEITZONE, day: '2-digit', month: '2-digit' });
-const spielLink = startseite && naechstes ? '#spiele' : '/spielplan/';
-const aktiv = (href: string) => pfad === href || (href !== '/' && pfad.startsWith(href));
+const aktiv = (seite?: string) => !!seite && pfad.startsWith(seite);
+const zu = (abschnitt: string) => abschnittLink(abschnitt, startseite);
+const spielLink = naechstes ? zu('spiele') : '/spielplan/';
 ---
 
 <!doctype html>
@@ -62,7 +63,7 @@ const aktiv = (href: string) => pfad === href || (href !== '/' && pfad.startsWit
       <!-- KOPF: oben transparent auf der Tafel, beim Scrollen schmal mit milchigem Hintergrund -->
       <header class="kopf" data-kopf>
         <div class="wrap kopf-innen">
-          <a class="marke" href="/" aria-label={`${VEREIN} – Startseite`}>
+          <a class="marke" href="/" aria-label={`${VEREIN} – Startseite`} data-nach-oben={startseite ? '' : undefined}>
             <Magnet size="48px" alt="" eager />
             <span class="marke-text"><span class="mt-ehc">EHC</span> <span class="mt-name">Wintistars</span></span>
           </a>
@@ -71,7 +72,11 @@ const aktiv = (href: string) => pfad === href || (href !== '/' && pfad.startsWit
               {
                 NAVIGATION.map((n, i) => (
                   <li style={`--i:${i}`}>
-                    <a href={n.href} aria-current={aktiv(n.href) ? 'page' : undefined}>
+                    <a
+                      href={zu(n.abschnitt)}
+                      aria-current={'seite' in n && aktiv(n.seite) ? 'page' : undefined}
+                      data-abschnitt={n.abschnitt}
+                    >
                       <span class="nav-nr" aria-hidden="true">
                         {String(i + 1).padStart(2, '0')}
                       </span>
@@ -95,7 +100,7 @@ const aktiv = (href: string) => pfad === href || (href !== '/' && pfad.startsWit
           <a class="kopf-cta" href={spielLink}>
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
               {
-                spielLink.startsWith('#') ? (
+                startseite && naechstes ? (
                   <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M6 13l6 6 6-6" />
                 ) : (
                   <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6" />
@@ -146,17 +151,17 @@ const aktiv = (href: string) => pfad === href || (href !== '/' && pfad.startsWit
             <div>
               <p class="fuss-h">Saison</p>
               <ul>
-                <li><a href="/news/">News</a></li>
-                <li><a href="/spielplan/">Spielplan</a></li>
-                <li><a href="/team/">Team</a></li>
+                <li><a href={zu('news')}>News</a></li>
+                <li><a href={zu('spiele')}>Spielplan</a></li>
+                <li><a href={zu('team')}>Team</a></li>
               </ul>
             </div>
             <div>
               <p class="fuss-h">Verein</p>
               <ul>
-                <li><a href="/club/">Club</a></li>
-                <li><a href="/galerie/">Galerie</a></li>
-                <li><a href="/kontakt/">Kontakt</a></li>
+                <li><a href={zu('club')}>Club</a></li>
+                <li><a href={zu('galerie')}>Galerie</a></li>
+                <li><a href={zu('kontakt')}>Kontakt</a></li>
               </ul>
             </div>
           </nav>
@@ -175,7 +180,7 @@ const aktiv = (href: string) => pfad === href || (href !== '/' && pfad.startsWit
         <div class="wrap fuss-unten">
           <p>© {new Date().getFullYear()} {VEREIN}</p>
           {verein?.kontaktEmail && <a href={`mailto:${verein.kontaktEmail}`}>{verein.kontaktEmail}</a>}
-          <a href="#">Nach oben <span aria-hidden="true">↑</span></a>
+          <a href="#" data-nach-oben>Nach oben <span aria-hidden="true">↑</span></a>
         </div>
       </footer>
     </div>
@@ -212,6 +217,40 @@ const aktiv = (href: string) => pfad === href || (href !== '/' && pfad.startsWit
   const kleinPruefen = () => kopf?.classList.toggle('klein', window.scrollY > 24);
   window.addEventListener('scroll', kleinPruefen, { passive: true });
   kleinPruefen();
+
+  // ---------- Logo (auf der Startseite) und «Nach oben»: weich nach oben scrollen statt neu laden ----------
+  document.querySelectorAll<HTMLAnchorElement>('[data-nach-oben]').forEach((a) =>
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (kopf?.hasAttribute('data-offen')) setzeMenu(false, false);
+      const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: ruhig ? 'auto' : 'smooth' });
+      // Anker aus der Adresse entfernen (z. B. nach einem Sprung zu #team)
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    }),
+  );
+
+  // ---------- Startseite: Menüpunkt des Abschnitts hervorheben, in dem man gerade ist ----------
+  const menuLinks = [...document.querySelectorAll<HTMLAnchorElement>('.nav a[data-abschnitt]')].filter((a) =>
+    a.getAttribute('href')?.startsWith('#'),
+  );
+  // Alle Abschnitte beobachten (auch solche ohne Menüpunkt wie die Galerie): dort ist dann kein Punkt markiert
+  const abschnitte = menuLinks.length ? [...document.querySelectorAll<HTMLElement>('main section[id]')] : [];
+  if (abschnitte.length) {
+    const markiere = () => {
+      // Aktiv ist der letzte Abschnitt, dessen Anfang das obere Drittel erreicht hat; ganz unten der letzte
+      const grenze = window.innerHeight * 0.35;
+      let aktuell = abschnitte.filter((el) => el.getBoundingClientRect().top <= grenze).pop()?.id;
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) aktuell = abschnitte.at(-1)?.id;
+      menuLinks.forEach((a) => {
+        if (a.dataset.abschnitt === aktuell) a.setAttribute('aria-current', 'location');
+        else a.removeAttribute('aria-current');
+      });
+    };
+    window.addEventListener('scroll', markiere, { passive: true });
+    window.addEventListener('resize', markiere, { passive: true });
+    markiere();
+  }
 
   // ---------- Einblendungen (Wischer, Marker, Karten) ----------
   const alle = document.querySelectorAll<HTMLElement>('[data-rv]');

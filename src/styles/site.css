@@ -19,10 +19,26 @@ img {
   max-width: 100%;
   display: block;
 }
-/* Platz für den fixen Kopf beim Springen zu Abschnitten */
-section[id],
-footer {
-  scroll-margin-top: 88px;
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+/* Springen zu Abschnitten: Der Kopf ist dann schmal (62px). Der Kicker eines Abschnitts soll knapp darunter
+   stehen, also das obere Padding des Abschnitts grösstenteils überspringen. Bänder beginnen direkt unter dem Kopf. */
+.d {
+  --kopf-schmal: 62px;
+}
+section[id] {
+  scroll-margin-top: var(--kopf-schmal);
+}
+.sektion[id] {
+  scroll-margin-top: calc(var(--kopf-schmal) + 1.75rem - clamp(2.5rem, 5vw, 4.5rem));
+}
+@media (max-height: 500px) {
+  .d {
+    --kopf-schmal: 54px;
+  }
 }
 
 /* ================= Tokens ================= */
@@ -144,7 +160,8 @@ footer {
   font: 800 clamp(2.9rem, 6.2vw, 5.4rem) / 0.86 var(--f-titel);
   text-transform: uppercase;
   letter-spacing: -0.005em;
-  margin-top: 0.3rem;
+  /* Platz für Umlaut-Punkte (Ü) über den Grossbuchstaben bei der engen Zeilenhöhe */
+  margin-top: 0.16em;
 }
 .h3 {
   font: 750 1.45rem/1 var(--f-titel);
@@ -259,9 +276,7 @@ footer {
 }
 
 /* ================= Kopf ================= */
-html {
-  scroll-padding-top: 80px;
-}
+
 .kopf {
   --kopf-h: 84px;
   position: fixed;
@@ -379,7 +394,7 @@ html {
 }
 .nav a:hover .strich path,
 .nav a:focus-visible .strich path,
-.nav a[aria-current='page'] .strich path {
+.nav a[aria-current] .strich path {
   stroke-dashoffset: 0;
   opacity: 1;
 }
@@ -2763,6 +2778,12 @@ a.kt-spieler:hover .kt-nachname {
 .ueber-lead > * + * {
   margin-top: 1em;
 }
+/* «Über uns» auf der Startseite: erster Absatz als Lead, weitere Absätze in Fliesstextgrösse */
+.ueber-lead > * + * {
+  font-size: 1.075rem;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
 .prose h2 {
   margin-top: 2rem;
   font: 800 clamp(1.9rem, 3.2vw, 2.4rem) / 0.95 var(--f-titel);
@@ -2810,9 +2831,4 @@ a.kt-spieler:hover .kt-nachname {
 .prose img {
   height: auto;
   border-radius: 12px;
-}
-
-/* Team-Seite: das Band beginnt direkt unter dem Kopf */
-.team-band-seite {
-  margin-top: 0;
 }

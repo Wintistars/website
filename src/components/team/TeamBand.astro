@@ -3,27 +3,28 @@
 // Davor Teamfoto und Kadertafel (alle Spieler gleichwertig nach Rückennummer, keine Aufstellung);
 // ein Klick auf einen Spieler öffnet die Spielerkarte.
 import SektionKopf from '../SektionKopf.astro';
+import RichText from '../richtext/RichText.astro';
 import Eismaschine from '../Eismaschine.astro';
 import { imageSrcset, imageUrl } from '../../lib/image';
 import { LOGO } from '../../lib/logo';
 import { kaderTafel, POS_EINZEL, type KaderSpieler } from '../../lib/kader';
-import type { SanityImage, Spieler } from '../../lib/types';
+import type { RichText as RichTextWert, SanityImage, Spieler } from '../../lib/types';
 import { VEREIN } from '../../lib/verein';
 
 interface Props {
   spieler: Spieler[];
   teamfoto?: SanityImage;
-  /** 1 = eigene Seite (/team/, Titel als h1), 2 = Abschnitt auf der Startseite */
-  ebene?: 1 | 2;
-  mehr?: { href: string; label: string };
+  trainer?: string;
+  /** Teaminfos & Kader → Beschreibung (optional) */
+  beschreibung?: RichTextWert;
 }
-const { spieler, teamfoto, ebene = 2, mehr } = Astro.props;
+const { spieler, teamfoto, trainer, beschreibung } = Astro.props;
 const { kader, gruppen, rang, GRUPPEN_TITEL } = kaderTafel(spieler);
 const anzahl = kader.length;
 const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.position === 'verteidiger' ? 'v' : 's');
 ---
 
-<section class:list={['team-band', { 'team-band-seite': ebene === 1 }]} id="team" aria-labelledby="team-titel">
+<section class="team-band" id="team" aria-labelledby="team-titel">
   <svg class="tb-motiv" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
     <line x1="760" y1="0" x2="760" y2="600" class="tb-rot" />
     <line x1="440" y1="0" x2="440" y2="600" class="tb-blau" />
@@ -39,9 +40,16 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
     <div class="tb-zb"><Eismaschine logo={LOGO} richtung={1} /></div>
   </div>
   <div class="wrap tb-innen">
-  <SektionKopf kicker={ebene === 1 ? VEREIN : 'Kader'} titel="Das Team" id="team-titel" ebene={ebene} mehr={mehr}>
-    {anzahl > 0 && <p class="tb-anzahl">{anzahl} Spieler im Kader</p>}
+  <SektionKopf kicker="Kader" titel="Das Team" id="team-titel">
+    {anzahl > 0 && <p class="tb-anzahl">{[`${anzahl} Spieler im Kader`, trainer && `Trainer: ${trainer}`].filter(Boolean).join(' · ')}</p>}
   </SektionKopf>
+  {
+    (beschreibung?.length ?? 0) > 0 && (
+      <div class="tb-text">
+        <RichText value={beschreibung} />
+      </div>
+    )
+  }
 
   <div class="tb-raster">
     <figure class:list={['tb-foto', 'rv', { 'tb-foto-leer': !teamfoto?.asset }]} data-rv>
@@ -54,7 +62,7 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
             alt={teamfoto.alt ?? `Teamfoto ${VEREIN}`}
             width={teamfoto.dimensions?.width}
             height={teamfoto.dimensions?.height}
-            loading={ebene === 1 ? 'eager' : 'lazy'}
+            loading="lazy"
             decoding="async"
           />
         ) : (
@@ -168,6 +176,14 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
 </section>
 
 <style>
+  .tb-text {
+    max-width: 42rem;
+    margin-bottom: clamp(1.5rem, 3vw, 2.4rem);
+    color: rgb(246 241 231 / 0.85);
+  }
+  .tb-text :global(p + p) {
+    margin-top: 0.8em;
+  }
   .tb-anzahl {
     margin-top: 0.6rem;
     color: var(--sand);

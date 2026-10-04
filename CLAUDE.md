@@ -39,8 +39,11 @@ GitHub-Secrets: `SANITY_AUTH_TOKEN` (Studio-Deploy), `CLOUDFLARE_DEPLOY_HOOK` (t
 - `src/lib/logo.ts` – Pfad zum Logo (noch Rasterbild-Platzhalter; beim Vektor-Logo nur hier ändern)
 - `src/components/richtext/` – Portable Text (Rich Text) inkl. Bildern
 - `functions/api/kontakt.ts` – Cloudflare Pages Function für das Kontaktformular (Versand über Resend)
-- `src/pages/` – Routen: `/`, `/news/`, `/news/[slug]`, `/team`, `/spielplan`, `/spielplan.ics`,
-  `/galerie`, `/[...slug]` (Typ `seite`; `club` und `kontakt` werden auch ohne Sanity-Seite erzeugt)
+- `src/pages/` – Routen: `/`, `/news/`, `/news/[slug]`, `/spielplan`, `/spielplan.ics`, `/galerie`,
+  `/[...slug]` (weitere Seiten vom Typ `seite`)
+- Navigation (`src/lib/navigation.ts`): Menüpunkte springen zu Abschnitten der Startseite (`#news`, `#team`, `#spiele`,
+  `#club`, `#kontakt`), dort hebt das Menü den aktuellen Abschnitt hervor. Eigene Unterseiten nur, wo sie mehr zeigen
+  (Spielplan, News, Galerie). `/team/`, `/club/`, `/kontakt/`, `/spieler/*` leiten per `public/_redirects` um.
 
 ## Konventionen
 
@@ -51,7 +54,7 @@ GitHub-Secrets: `SANITY_AUTH_TOKEN` (Studio-Deploy), `CLOUDFLARE_DEPLOY_HOOK` (t
   `_id` = Typname: geöffnet über `studio/structure.ts`, abgesichert in `studio/sanity.config.ts` (`SINGLETONS`:
   keine Vorlage zum Neu-Erstellen, kein Löschen/Duplizieren). Abfragen per `*[_id == "team"][0]`; fehlt das Dokument,
   muss die Website trotzdem bauen.
-  Navigation (`src/lib/navigation.ts`) verlinkt `/club/` und `/kontakt/` → dafür braucht es Seiten mit diesen Slugs.
+  «Über uns» auf der Startseite = Inhalt der Seite `home`, Hero-Text = deren Einleitung.
 - Team → Spieler ist ein Referenz-Array (`team.spieler`, Reihenfolge = Kader-Reihenfolge). Spieler gehören implizit zum Team.
 - Änderung am Content-Modell immer synchron in Schema, GROQ, Typen und Komponenten → Subagent `sanity-schema`.
 
