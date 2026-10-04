@@ -1,0 +1,599 @@
+---
+// Entwurf A: Spielerkarte als <dialog>. Die Kader-Einträge (Elemente mit [data-spieler] in [data-kader])
+// werden per Script zu Buttons; ohne JS bleiben sie Links aufs Profil bzw. nicht interaktiv.
+---
+
+<dialog class="sd" data-sd aria-labelledby="sd-titel">
+  <div class="sd-box">
+    <button type="button" class="sd-zu" data-sd-zu aria-label="Spielerkarte schliessen">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path></svg>
+    </button>
+
+    <figure class="sd-portrait" data-sd-wechsel>
+      <img data-sd-img alt="" width="600" height="800" hidden />
+      <div class="sd-ph" data-sd-ph>
+        <svg class="sd-ph-eis" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <line x1="0" y1="96" x2="300" y2="96" class="l-blau" stroke-width="7"></line>
+          <line x1="0" y1="262" x2="300" y2="262" class="l-rot" stroke-width="7"></line>
+          <circle cx="150" cy="262" r="92" fill="none" class="l-blau" stroke-width="2.5"></circle>
+          <circle cx="150" cy="262" r="5" class="p-blau"></circle>
+          <circle cx="40" cy="168" r="5" class="p-rot"></circle>
+          <circle cx="260" cy="168" r="5" class="p-rot"></circle>
+        </svg>
+        <span class="sd-ph-nr" data-sd-ph-nr aria-hidden="true"></span>
+        <svg class="sd-ph-silh" viewBox="0 0 300 400" aria-hidden="true">
+          <path
+            class="s-koerper"
+            d="M22 400 C22 330 44 293 96 281 C114 277 130 274 150 274 C170 274 186 277 204 281 C256 293 278 330 278 400 Z"
+          ></path>
+          <rect class="s-koerper" x="130" y="238" width="40" height="44" rx="10"></rect>
+          <path class="s-koerper" d="M122 206 L178 206 L174 246 C166 262 134 262 126 246 Z"></path>
+          <path
+            class="s-helm"
+            d="M96 206 C94 144 118 106 152 106 C188 106 210 142 208 200 L208 222 C208 229 202 234 195 234 L180 234 L180 208 L120 208 L120 234 L106 234 C100 234 96 229 96 222 Z"
+          ></path>
+          <rect class="s-visier" x="112" y="174" width="88" height="17" rx="7"></rect>
+          <path class="s-gitter" d="M124 212 L176 212 M128 224 L172 224 M134 236 L166 236 M150 208 L150 248" stroke-width="3" fill="none"></path>
+        </svg>
+        <span class="sd-ph-hinweis">Porträt folgt</span>
+      </div>
+    </figure>
+
+    <div class="sd-info" data-sd-wechsel>
+      <p class="sd-nr" aria-hidden="true"><span>#</span><span data-sd-nr></span></p>
+      <h2 id="sd-titel" class="sd-name">
+        <span class="sd-vorname" data-sd-vorname></span>
+        <span class="sd-nachname" data-sd-nachname></span>
+      </h2>
+      <p class="sd-pos"><span class="sr" data-sd-nr-sr></span><span data-sd-pos></span></p>
+      <a class="sd-profil" data-sd-profil hidden>Zum Spielerprofil <span aria-hidden="true">→</span></a>
+    </div>
+
+    <div class="sd-nav">
+      <button type="button" class="sd-pfeil" data-sd-prev aria-label="Vorheriger Spieler">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+      <p class="sd-zaehler" data-sd-zaehler aria-live="polite"></p>
+      <button type="button" class="sd-pfeil" data-sd-next aria-label="Nächster Spieler">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const dlg = document.querySelector<HTMLDialogElement>('[data-sd]');
+  const liste = [...document.querySelectorAll<HTMLElement>('[data-kader] [data-spieler]')];
+
+  if (dlg && liste.length > 0 && typeof dlg.showModal === 'function') {
+    const reduziert = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const el = <T extends HTMLElement = HTMLElement>(sel: string) => dlg.querySelector<T>(sel)!;
+    const img = el<HTMLImageElement>('[data-sd-img]');
+    const ph = el('[data-sd-ph]');
+    const profil = el<HTMLAnchorElement>('[data-sd-profil]');
+    const prev = el<HTMLButtonElement>('[data-sd-prev]');
+    const next = el<HTMLButtonElement>('[data-sd-next]');
+    const wechsel = [...dlg.querySelectorAll<HTMLElement>('[data-sd-wechsel]')];
+    let aktuell: HTMLElement | undefined;
+
+    // Einträge zu Buttons machen (gleiche Klasse und gleicher Inhalt)
+    for (const li of liste) {
+      const alt = li.querySelector<HTMLElement>('.spieler-karte');
+      if (!alt) continue;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      // Alle Attribute übernehmen (Klasse und Astro-Scope-Attribut für die Styles), ausser dem Link
+      for (const a of [...alt.attributes]) if (a.name !== 'href') btn.setAttribute(a.name, a.value);
+      btn.setAttribute('aria-haspopup', 'dialog');
+      btn.append(...alt.childNodes);
+      alt.replaceWith(btn);
+      btn.addEventListener('click', () => oeffnen(li));
+    }
+
+    const sichtbar = () => liste.filter((li) => !li.hidden);
+
+    function zeigen(li: HTMLElement, richtung: -1 | 0 | 1) {
+      aktuell = li;
+      const d = li.dataset;
+      const name = `${d.vorname} ${d.name}`;
+      el('[data-sd-nr]').textContent = d.nummer ?? '';
+      el('[data-sd-nr-sr]').textContent = `Nummer ${d.nummer}, `;
+      el('[data-sd-vorname]').textContent = d.vorname ?? '';
+      el('[data-sd-nachname]').textContent = d.name ?? '';
+      el('[data-sd-pos]').textContent = d.posLabel ?? '';
+      el('[data-sd-ph-nr]').textContent = d.nummer ?? '';
+      if (d.bild) {
+        img.src = d.bild;
+        img.alt = `Porträt ${name}`;
+        img.hidden = false;
+        ph.hidden = true;
+      } else {
+        img.removeAttribute('src');
+        img.alt = '';
+        img.hidden = true;
+        ph.hidden = false;
+      }
+      if (d.slug) {
+        profil.href = `/spieler/${d.slug}/`;
+        profil.hidden = false;
+      } else {
+        profil.removeAttribute('href');
+        profil.hidden = true;
+      }
+      const reihe = sichtbar();
+      const pos = reihe.indexOf(li);
+      el('[data-sd-zaehler]').textContent = `${pos + 1} / ${reihe.length}`;
+      prev.disabled = next.disabled = reihe.length < 2;
+
+      if (richtung !== 0 && !reduziert) {
+        const klasse = richtung > 0 ? 'von-rechts' : 'von-links';
+        for (const w of wechsel) {
+          w.classList.remove('von-rechts', 'von-links');
+          void w.offsetWidth;
+          w.classList.add(klasse);
+        }
+      }
+    }
+
+    function blaettern(schritt: -1 | 1) {
+      const reihe = sichtbar();
+      if (!aktuell || reihe.length < 2) return;
+      const i = reihe.indexOf(aktuell);
+      zeigen(reihe[(i + schritt + reihe.length) % reihe.length], schritt);
+    }
+
+    function oeffnen(li: HTMLElement) {
+      zeigen(li, 0);
+      document.documentElement.style.overflow = 'hidden';
+      dlg!.showModal();
+    }
+
+    prev.addEventListener('click', () => blaettern(-1));
+    next.addEventListener('click', () => blaettern(1));
+    el('[data-sd-zu]').addEventListener('click', () => dlg.close());
+    // Klick auf den Hintergrund (::backdrop gehört zum <dialog>-Element)
+    dlg.addEventListener('click', (e) => {
+      if (e.target === dlg) dlg.close();
+    });
+    dlg.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        blaettern(-1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        blaettern(1);
+      }
+    });
+    dlg.addEventListener('close', () => {
+      document.documentElement.style.overflow = '';
+      aktuell?.querySelector<HTMLElement>('.spieler-karte')?.focus();
+    });
+  }
+</script>
+
+<style>
+  .sd {
+    --sd-eis: #eef2f5;
+    --sd-eis-2: #ffffff;
+    --sd-linie-rot: rgb(212 46 39 / 0.35);
+    --sd-linie-blau: rgb(42 98 184 / 0.3);
+    --sd-silh: #1c2232;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    width: min(720px, 100% - 2rem);
+    max-width: none;
+    max-height: calc(100dvh - 2rem);
+    overflow: visible;
+  }
+  @media (prefers-color-scheme: dark) {
+    .sd {
+      --sd-eis: #182035;
+      --sd-eis-2: #222c45;
+      --sd-linie-rot: rgb(255 110 100 / 0.35);
+      --sd-linie-blau: rgb(120 160 230 / 0.35);
+      --sd-silh: #0c111c;
+    }
+  }
+  .sd::backdrop {
+    background: rgb(12 17 28 / 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .sd[open] {
+    display: block;
+  }
+  .sd [hidden] {
+    display: none !important;
+  }
+
+  .sd-box {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+    grid-template-areas:
+      'bild info'
+      'bild nav';
+    grid-template-rows: 1fr auto;
+    gap: 0 1.75rem;
+    padding: 14px;
+    border-radius: var(--r-l, 28px);
+    background: var(--karte, #fff);
+    border: 1px solid var(--flaeche-rand, #fff);
+    box-shadow: 0 40px 80px -30px rgb(12 17 28 / 0.6);
+    max-height: calc(100dvh - 2rem);
+    overflow: auto;
+    animation: sd-auf 0.22s var(--ease, ease-out) both;
+  }
+
+  .sd-zu {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--hover, #f2f5f8);
+    color: var(--ink);
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      transform 0.2s;
+  }
+  .sd-zu:hover {
+    background: var(--solid, #1c2232);
+    color: #fff;
+    transform: rotate(90deg);
+  }
+
+  /* Porträt 3:4 */
+  .sd-portrait {
+    grid-area: bild;
+    position: relative;
+    margin: 0;
+    aspect-ratio: 3 / 4;
+    border-radius: calc(var(--r-l, 28px) - 8px);
+    overflow: hidden;
+    background: var(--sd-eis);
+    align-self: start;
+  }
+  .sd-portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .sd-ph {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(170deg, var(--sd-eis-2), var(--sd-eis));
+  }
+  .sd-ph-eis {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .l-rot {
+    stroke: var(--sd-linie-rot);
+  }
+  .l-blau {
+    stroke: var(--sd-linie-blau);
+  }
+  .p-rot {
+    fill: var(--sd-linie-rot);
+  }
+  .p-blau {
+    fill: var(--sd-linie-blau);
+  }
+  .sd-ph-nr {
+    position: absolute;
+    top: 4%;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-stretch: 125%;
+    font-weight: 900;
+    font-size: 9.5rem;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: transparent;
+    -webkit-text-stroke: 2px rgb(28 34 50 / 0.16);
+  }
+  @media (prefers-color-scheme: dark) {
+    .sd-ph-nr {
+      -webkit-text-stroke-color: rgb(255 255 255 / 0.14);
+    }
+  }
+  .sd-ph-silh {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 92%;
+    transform: translateX(-50%);
+  }
+  .s-koerper,
+  .s-helm {
+    fill: var(--sd-silh);
+    opacity: 0.88;
+  }
+  .s-helm {
+    opacity: 0.95;
+  }
+  .s-visier {
+    fill: var(--sd-eis-2);
+    opacity: 0.28;
+  }
+  .s-gitter {
+    stroke: var(--sd-eis-2);
+    opacity: 0.25;
+  }
+  .sd-ph-hinweis {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.92);
+    color: #1c2232;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Angaben */
+  .sd-info {
+    grid-area: info;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 3.5rem 1rem 1rem 0;
+    min-width: 0;
+    container-type: inline-size;
+  }
+  .sd-nr {
+    margin: 0;
+    font-stretch: 125%;
+    font-weight: 900;
+    font-size: clamp(3.5rem, 9vw, 5.5rem);
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    color: var(--orange, #b9612a);
+    font-variant-numeric: tabular-nums;
+  }
+  .sd-nr span:first-child {
+    font-size: 0.45em;
+    vertical-align: 0.85em;
+    margin-right: 0.05em;
+    color: var(--ink-2);
+  }
+  .sd-name {
+    margin: 0;
+    display: grid;
+    gap: 0.2rem;
+  }
+  .sd-vorname {
+    font-size: 1.15rem;
+    font-weight: 500;
+  }
+  .sd-nachname {
+    font-stretch: 125%;
+    font-weight: 850;
+    font-size: clamp(1.1rem, 10.5cqi, 2.4rem);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+  .sd-pos {
+    margin: 0.2rem 0 0;
+    align-self: flex-start;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    background: var(--hover, #f2f5f8);
+    border: 1px solid var(--linie);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--akzent-text, #9a4b1b);
+  }
+  .sd-profil {
+    margin-top: 0.8rem;
+    align-self: flex-start;
+    display: inline-flex;
+    gap: 0.4rem;
+    padding: 0.7rem 1.15rem;
+    border-radius: 999px;
+    background: var(--solid, #1c2232);
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .sd-profil:hover {
+    background: var(--orange-dunkel, #9a4b1b);
+  }
+
+  /* Blättern */
+  .sd-nav {
+    grid-area: nav;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0 0.2rem;
+    border-top: 1px solid var(--linie);
+    margin-right: 0.2rem;
+  }
+  .sd-pfeil {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1.5px solid var(--linie);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      color 0.2s,
+      border-color 0.2s,
+      transform 0.15s;
+  }
+  .sd-pfeil:hover:not(:disabled) {
+    background: var(--solid, #1c2232);
+    border-color: var(--solid, #1c2232);
+    color: #fff;
+  }
+  .sd-pfeil:active:not(:disabled) {
+    transform: scale(0.94);
+  }
+  .sd-pfeil:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .sd-zaehler {
+    margin: 0;
+    font-stretch: 125%;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+  .sd :focus-visible {
+    outline: 3px solid var(--orange, #b9612a);
+    outline-offset: 3px;
+  }
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Wechsel */
+  .von-rechts {
+    animation: sd-rechts 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .von-links {
+    animation: sd-links 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes sd-rechts {
+    from {
+      opacity: 0.2;
+      transform: translateX(18px);
+    }
+  }
+  @keyframes sd-links {
+    from {
+      opacity: 0.2;
+      transform: translateX(-18px);
+    }
+  }
+  @keyframes sd-auf {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.97);
+    }
+  }
+  @keyframes sd-hoch {
+    from {
+      transform: translateY(100%);
+    }
+  }
+
+  /* Mobile: Bottom-Sheet */
+  @media (max-width: 640px) {
+    .sd {
+      width: 100%;
+      margin: auto 0 0;
+      max-height: 92dvh;
+    }
+    .sd-box {
+      grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+      grid-template-areas:
+        'griff griff'
+        'bild info'
+        'nav  nav';
+      grid-template-rows: auto auto auto;
+      gap: 0 1rem;
+      padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
+      border-radius: 24px 24px 0 0;
+      border-bottom: 0;
+      max-height: 92dvh;
+      animation: sd-hoch 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+    .sd-box::before {
+      content: '';
+      grid-area: griff;
+      justify-self: center;
+      width: 40px;
+      height: 5px;
+      margin-bottom: 14px;
+      border-radius: 3px;
+      background: var(--linie);
+    }
+    .sd-zu {
+      top: 12px;
+      right: 12px;
+      width: 38px;
+      height: 38px;
+    }
+    .sd-info {
+      justify-content: flex-start;
+      padding: 2.6rem 0 0;
+      gap: 0.4rem;
+    }
+    .sd-nr {
+      font-size: 3rem;
+    }
+    .sd-vorname {
+      font-size: 1rem;
+    }
+    .sd-nachname {
+      font-size: clamp(0.95rem, 11cqi, 1.5rem);
+    }
+    .sd-pos {
+      font-size: 0.68rem;
+      padding: 0.3rem 0.6rem;
+    }
+    .sd-profil {
+      margin-top: 0.4rem;
+      padding: 0.55rem 0.9rem;
+      font-size: 0.85rem;
+    }
+    .sd-ph-nr {
+      font-size: 5rem;
+    }
+    .sd-ph-hinweis {
+      left: 8px;
+      bottom: 8px;
+      font-size: 0.6rem;
+      padding: 0.25rem 0.5rem;
+    }
+    .sd-nav {
+      margin: 1rem 0 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sd-box,
+    .von-rechts,
+    .von-links {
+      animation: none !important;
+    }
+    .sd-zu,
+    .sd-pfeil {
+      transition: none;
+    }
+  }
+</style>

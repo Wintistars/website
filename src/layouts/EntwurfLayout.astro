@@ -1,0 +1,156 @@
+---
+// NUR FÜR DESIGN-ENTWÜRFE: eigenständige Seite ohne globales Styling, mit Umschalter zwischen den Entwürfen.
+interface Props {
+  title: string;
+  /** Hintergrundfarbe für <body> und theme-color */
+  bg: string;
+}
+
+const { title, bg } = Astro.props;
+const current = Astro.url.pathname;
+const ENTWUERFE = [
+  { href: '/entwurf/a/', label: 'A' },
+  { href: '/entwurf/b/', label: 'B' },
+  { href: '/entwurf/c/', label: 'C' },
+];
+---
+
+<!doctype html>
+<html lang="de-CH">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content={bg} />
+    <title>{title} | Entwurf EHC Wintistars</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <slot name="head" />
+  </head>
+  <body style={`background:${bg}`}>
+    <slot />
+    <nav class="entwurf-switch" aria-label="Entwürfe">
+      <span>Entwurf</span>
+      {ENTWUERFE.map((e) => <a href={e.href} aria-current={current === e.href ? 'page' : undefined}>{e.label}</a>)}
+    </nav>
+    <div class="entwurf-hinweis" role="status" aria-live="polite" hidden>
+      Diese Unterseite wird erst nach der Wahl des Designs gestaltet.
+    </div>
+    <script>
+      // In den Entwürfen gibt es die Unterseiten noch nicht im neuen Design.
+      // Menü-Links springen deshalb zum passenden Abschnitt auf derselben Seite;
+      // alle übrigen internen Links (z. B. Spielerprofile) zeigen einen kurzen Hinweis.
+      const ABSCHNITT: Record<string, string> = {
+        '/news/': '#news',
+        '/team/': '#team',
+        '/spielplan/': '#spiele',
+        '/club/': '#club',
+        '/galerie/': '#galerie',
+        '/kontakt/': 'footer',
+      };
+      const hinweis = document.querySelector<HTMLElement>('.entwurf-hinweis');
+      let timer: number | undefined;
+
+      function zeigeHinweis() {
+        if (!hinweis) return;
+        hinweis.hidden = false;
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => (hinweis.hidden = true), 3200);
+      }
+
+      function schliesseMenues() {
+        // Offene Overlay-Menüs der Entwürfe reagieren auf Escape.
+        const esc = { key: 'Escape', bubbles: true };
+        document.dispatchEvent(new KeyboardEvent('keydown', esc));
+        window.dispatchEvent(new KeyboardEvent('keydown', esc));
+        document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', esc));
+      }
+
+      document.addEventListener('click', (event) => {
+        const link = (event.target as Element | null)?.closest?.('a[href]');
+        if (!(link instanceof HTMLAnchorElement)) return;
+        const ziel = new URL(link.href, location.href);
+        if (ziel.origin !== location.origin) return;
+        if (ziel.pathname.startsWith('/entwurf/') || ziel.pathname.endsWith('.ics') || ziel.pathname === location.pathname) return;
+        event.preventDefault();
+        const abschnitt = ABSCHNITT[ziel.pathname] && document.querySelector(ABSCHNITT[ziel.pathname]);
+        if (abschnitt) {
+          schliesseMenues();
+          const ruhig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+          requestAnimationFrame(() => abschnitt.scrollIntoView({ behavior: ruhig ? 'auto' : 'smooth', block: 'start' }));
+        } else {
+          zeigeHinweis();
+        }
+      });
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+  }
+  img {
+    max-width: 100%;
+    display: block;
+  }
+  .entwurf-switch {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.3rem 0.4rem 0.3rem 0.8rem;
+    border-radius: 999px;
+    background: rgb(20 20 20 / 0.85);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    font: 600 12px/1 system-ui, sans-serif;
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.3);
+  }
+  /* Platz für fixe Header beim Springen zu Abschnitten */
+  section[id],
+  footer {
+    scroll-margin-top: 88px;
+  }
+  .entwurf-hinweis {
+    position: fixed;
+    left: 50%;
+    bottom: 4.5rem;
+    z-index: 1001;
+    max-width: calc(100vw - 2rem);
+    padding: 0.8rem 1.1rem;
+    border-radius: 12px;
+    background: rgb(20 20 20 / 0.92);
+    color: #fff;
+    font: 500 14px/1.4 system-ui, sans-serif;
+    text-align: center;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+    transform: translateX(-50%);
+  }
+  .entwurf-switch span {
+    opacity: 0.6;
+    margin-right: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .entwurf-switch a {
+    color: inherit;
+    text-decoration: none;
+    padding: 0.45rem 0.7rem;
+    border-radius: 999px;
+  }
+  .entwurf-switch a[aria-current='page'] {
+    background: #fff;
+    color: #111;
+  }
+</style>

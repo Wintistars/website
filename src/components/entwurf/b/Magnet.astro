@@ -1,0 +1,73 @@
+---
+// Entwurf B: Club-Logo als runder Magnet an der Taktiktafel.
+// Das Bild bleibt unverändert, es wird nur auf den sauberen Kreis (47.5 %) beschnitten;
+// Schatten, Rand und Glanz kommen per CSS auf eigenen Ebenen.
+import { LOGO_PLATZHALTER } from '../../../lib/entwurf';
+
+interface Props {
+  /** CSS-Länge für den Durchmesser des Bildes */
+  size?: string;
+  alt?: string;
+  class?: string;
+  /** Randfarbe (CSS), leer = kein Rand */
+  ring?: string;
+  eager?: boolean;
+}
+const { size = '48px', alt = 'Logo EHC Wintistars', class: klasse, ring, eager = false } = Astro.props;
+---
+
+<span class:list={['d-magnet', klasse, { 'mit-ring': !!ring }]} style={`--s:${size};${ring ? `--ring:${ring}` : ''}`}>
+  <span class="m-schatten" aria-hidden="true"></span>
+  <img
+    src={LOGO_PLATZHALTER}
+    alt={alt}
+    width="640"
+    height="640"
+    decoding="async"
+    loading={eager ? 'eager' : 'lazy'}
+    fetchpriority={eager ? 'high' : 'auto'}
+  />
+  <span class="m-glanz" aria-hidden="true"></span>
+</span>
+
+<style>
+  .d-magnet {
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: var(--s);
+    aspect-ratio: 1;
+  }
+  .d-magnet img {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    clip-path: circle(47.5%);
+  }
+  .m-schatten,
+  .m-glanz {
+    position: absolute;
+    inset: 2.5%;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .m-schatten {
+    background: #fff;
+    box-shadow:
+      0 1px 1px rgb(28 34 50 / 0.18),
+      0 4px 8px -2px rgb(28 34 50 / 0.22),
+      0 calc(var(--s) * 0.08) calc(var(--s) * 0.16) calc(var(--s) * -0.04) rgb(28 34 50 / 0.38);
+  }
+  .mit-ring .m-schatten {
+    box-shadow:
+      0 0 0 calc(max(2px, var(--s) * 0.02)) var(--ring),
+      0 1px 1px rgb(28 34 50 / 0.18),
+      0 4px 8px -2px rgb(28 34 50 / 0.22),
+      0 calc(var(--s) * 0.08) calc(var(--s) * 0.16) calc(var(--s) * -0.04) rgb(28 34 50 / 0.38);
+  }
+  .m-glanz {
+    background:
+      radial-gradient(120% 80% at 28% 12%, rgb(255 255 255 / 0.42), rgb(255 255 255 / 0) 46%),
+      radial-gradient(90% 90% at 70% 92%, rgb(28 34 50 / 0.12), rgb(28 34 50 / 0) 50%);
+  }
+</style>

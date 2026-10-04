@@ -1,0 +1,182 @@
+---
+// ENTWURF E: Eismaschine in Draufsicht, nach dem Referenzfoto einer echten Maschine.
+// Front zeigt nach rechts (richtung 1) oder – um 180° gedreht – nach links (-1).
+// Aufbau von vorne nach hinten: grosser, kantiger weisser Schneetank (ca. 60 % der Länge) auf navy Unterbau mit
+// Scheinwerfern an den vorderen Ecken; hinten der seitlich versetzte offene Fahrerplatz (in Fahrtrichtung rechts),
+// daneben eine niedrige Abdeckung; ganz hinten der breite Conditioner mit Abzieher und dunklem, nassem Tuch.
+// Farben: nur Weiss, Navy und Grau/Schwarz. Das Logo sitzt gross auf dem Tank und steht immer aufrecht.
+// Mit `defs` werden nur die gemeinsamen Verläufe/Filter ausgegeben (einmal pro Seite).
+interface Props {
+  logo?: string;
+  richtung?: 1 | -1;
+  defs?: boolean;
+  class?: string;
+}
+const { logo = '', richtung = 1, defs = false, class: klasse } = Astro.props;
+
+// viewBox: x von -152 (Tuchende) bis 112 (Front), y von -64 bis 64; Conditioner y ±60, Abzieher bei x -134
+const SPIEGEL = -40; // x' = SPIEGEL - x
+const spiegeln = richtung === -1 ? `translate(${SPIEGEL} 0) scale(-1 1)` : undefined;
+const mx = (x: number) => (richtung === -1 ? SPIEGEL - x : x);
+const logoX = mx(33); // Mitte des Tankdeckels
+// Schatten fällt immer leicht nach rechts unten (Licht von oben links)
+const schattenX = (richtung === -1 ? SPIEGEL - 110 : -134) + 4;
+---
+
+{
+  defs ? (
+    <svg class="zb-defs" width="0" height="0" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="e-zb-body" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#2f3a58" />
+          <stop offset="0.5" stop-color="#1c2232" />
+          <stop offset="1" stop-color="#121726" />
+        </linearGradient>
+        <linearGradient id="e-zb-tank-kante" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#f4f6f8" />
+          <stop offset="0.5" stop-color="#d9dee4" />
+          <stop offset="1" stop-color="#b9c0c9" />
+        </linearGradient>
+        <linearGradient id="e-zb-tank" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#ffffff" />
+          <stop offset="1" stop-color="#eef1f4" />
+        </linearGradient>
+        <linearGradient id="e-zb-stahl" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#2c3139" />
+          <stop offset="0.4" stop-color="#7a828d" />
+          <stop offset="0.55" stop-color="#9aa2ac" />
+          <stop offset="1" stop-color="#3a4049" />
+        </linearGradient>
+        <linearGradient id="e-zb-tuch" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#4a525d" />
+          <stop offset="0.5" stop-color="#363d47" />
+          <stop offset="1" stop-color="#262b33" />
+        </linearGradient>
+        <linearGradient id="e-zb-reifen" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#4a4f58" />
+          <stop offset="0.5" stop-color="#2a2e35" />
+          <stop offset="1" stop-color="#16191e" />
+        </linearGradient>
+        <radialGradient id="e-zb-helm" cx="0.4" cy="0.3" r="0.75">
+          <stop offset="0" stop-color="#ffffff" />
+          <stop offset="0.55" stop-color="#e3e7ec" />
+          <stop offset="1" stop-color="#9ea6b1" />
+        </radialGradient>
+        <linearGradient id="e-zb-jacke" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#4c535f" />
+          <stop offset="1" stop-color="#262a32" />
+        </linearGradient>
+        <filter id="e-zb-schatten" x="-15%" y="-30%" width="130%" height="160%">
+          <feGaussianBlur stdDeviation="5.5" />
+        </filter>
+        <filter id="e-zb-kontakt" x="-10%" y="-20%" width="120%" height="140%">
+          <feGaussianBlur stdDeviation="1.6" />
+        </filter>
+        <clipPath id="e-zb-logo-clip">
+          <circle r="25.6" />
+        </clipPath>
+      </defs>
+    </svg>
+  ) : (
+    <svg class:list={['zb-svg', klasse]} viewBox="-152 -64 264 128" aria-hidden="true" focusable="false">
+      {/* Schatten aufs Eis */}
+      <rect x={schattenX} y="-50" width="244" height="110" rx="20" fill="#0b1626" fill-opacity="0.26" filter="url(#e-zb-schatten)" />
+      <rect x={schattenX - 2} y="-53" width="244" height="108" rx="12" fill="#0b1626" fill-opacity="0.2" filter="url(#e-zb-kontakt)" />
+
+      <g transform={spiegeln}>
+        {/* ---------- Conditioner hinten ---------- */}
+        <path
+          d="M-136 -57 H-143 Q-149 -48 -146 -38 Q-151 -26 -146 -14 Q-151 -2 -146 10 Q-151 22 -146 34 Q-150 46 -144 57 H-136 Z"
+          fill="url(#e-zb-tuch)"
+        />
+        <path d="M-139 -52 V52" stroke="#fff" stroke-opacity="0.3" stroke-width="1" stroke-linecap="round" />
+        <path d="M-143 -44 V-20 M-144 6 V28" stroke="#fff" stroke-opacity="0.18" stroke-width="0.8" stroke-linecap="round" />
+        {/* Abzieher (Stahl) */}
+        <rect x="-137" y="-60" width="6" height="120" rx="1.6" fill="url(#e-zb-stahl)" />
+        {/* Rahmen navy */}
+        <rect x="-132" y="-60" width="20" height="120" rx="3.5" fill="url(#e-zb-body)" />
+        <path d="M-131 -59 H-113" stroke="#fff" stroke-opacity="0.2" stroke-width="0.8" />
+        <path d="M-122 -55 V55" stroke="#0b0e15" stroke-opacity="0.6" stroke-width="0.8" />
+        <g fill="#3a404a">
+          <rect x="-131" y="-60" width="18" height="6" rx="2.5" />
+          <rect x="-131" y="54" width="18" height="6" rx="2.5" />
+        </g>
+        {/* Halterungen zum Unterbau */}
+        <g fill="#2a2f38">
+          <rect x="-114" y="-44" width="6" height="10" rx="1.5" />
+          <rect x="-114" y="34" width="6" height="10" rx="1.5" />
+        </g>
+
+        {/* ---------- Räder ---------- */}
+        <g fill="url(#e-zb-reifen)">
+          <rect x="-100" y="-56" width="32" height="10" rx="4" />
+          <rect x="-100" y="46" width="32" height="10" rx="4" />
+          <rect x="44" y="-56" width="32" height="10" rx="4" />
+          <rect x="44" y="46" width="32" height="10" rx="4" />
+        </g>
+
+        {/* ---------- Unterbau navy ---------- */}
+        <rect x="-112" y="-51" width="222" height="102" rx="9" fill="url(#e-zb-body)" />
+        <rect x="-112" y="-51" width="222" height="102" rx="9" fill="none" stroke="#fff" stroke-opacity="0.12" stroke-width="0.9" />
+        {/* Stossstange vorne, Scheinwerfer an den Ecken */}
+        <rect x="106" y="-42" width="5" height="84" rx="2.4" fill="#0e1119" />
+        <rect x="103.5" y="-47" width="4" height="9" rx="1.6" fill="#f2f4f7" />
+        <rect x="103.5" y="38" width="4" height="9" rx="1.6" fill="#f2f4f7" />
+
+        {/* ---------- Schneetank: grosser, kantiger weisser Kasten ---------- */}
+        <rect x="-38" y="-48" width="142" height="96" rx="5" fill="#0b0e15" fill-opacity="0.35" transform="translate(1 2)" />
+        <rect x="-38" y="-48" width="142" height="96" rx="5" fill="url(#e-zb-tank-kante)" />
+        {/* flacher Deckel, Kanten leicht abgeschrägt */}
+        <rect x="-33" y="-43" width="132" height="86" rx="3" fill="url(#e-zb-tank)" />
+        <path d="M-38 -48 L-33 -43 M104 -48 L99 -43 M-38 48 L-33 43 M104 48 L99 43" stroke="#aeb6c0" stroke-width="0.7" />
+        <rect x="-33" y="-43" width="132" height="86" rx="3" fill="none" stroke="#c4cbd3" stroke-width="0.7" />
+        <path d="M-31 -42.2 H97" stroke="#fff" stroke-width="0.9" />
+
+        {/* ---------- Fahrerplatz hinten, in Fahrtrichtung rechts ---------- */}
+        {/* niedrige Abdeckung auf der anderen Seite */}
+        <rect x="-106" y="-45" width="62" height="40" rx="5" fill="#2a3350" />
+        <rect x="-106" y="-45" width="62" height="40" rx="5" fill="none" stroke="#fff" stroke-opacity="0.1" stroke-width="0.8" />
+        <path d="M-98 -36 H-54 M-98 -30 H-54" stroke="#0b0e15" stroke-opacity="0.45" stroke-width="1" stroke-linecap="round" />
+        {/* Fahrerbereich */}
+        <rect x="-106" y="2" width="64" height="44" rx="6" fill="#0d111a" />
+        {/* Armaturenpult vor dem Fahrer */}
+        <rect x="-52" y="6" width="8" height="36" rx="2.5" fill="#262c3a" />
+        {/* Sitz mit Rückenlehne */}
+        <rect x="-102" y="9" width="8" height="30" rx="3" fill="#2b313d" />
+        <rect x="-95" y="11" width="18" height="26" rx="4" fill="#1f2430" />
+        {/* Fahrer: Arme zum Lenkrad, Schultern, Helm */}
+        <path d="M-85 12 Q-75 13 -65.5 16.5 M-85 36 Q-75 35 -65.5 31.5" stroke="url(#e-zb-jacke)" stroke-width="4.4" stroke-linecap="round" fill="none" />
+        <ellipse cx="-87" cy="24" rx="8" ry="14" fill="url(#e-zb-jacke)" />
+        <circle cx="-85.5" cy="24" r="7.6" fill="url(#e-zb-helm)" />
+        <path d="M-80.8 18.8 A7 7 0 0 1 -80.8 29.2" stroke="#1c2232" stroke-width="2.2" fill="none" stroke-linecap="round" />
+        {/* Lenkrad */}
+        <ellipse cx="-63" cy="24" rx="3" ry="9.5" fill="none" stroke="#06080c" stroke-width="2.4" />
+        <path d="M-63 24 H-53" stroke="#06080c" stroke-width="2" />
+      </g>
+
+      {/* Logo gross und zentriert auf dem Tankdeckel (ca. 60 % der Tankbreite), immer aufrecht */}
+      <g transform={`translate(${logoX} 0)`}>
+        <circle r="30" fill="#1c2232" fill-opacity="0.18" transform="translate(0.6 1.4)" />
+        <circle r="29" fill="#ffffff" />
+        <circle r="29" fill="none" stroke="#1c2232" stroke-width="1.6" />
+        {logo && <image href={logo} x="-27" y="-27" width="54" height="54" clip-path="url(#e-zb-logo-clip)" />}
+      </g>
+    </svg>
+  )
+}
+
+<style>
+  .zb-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+  .zb-svg {
+    display: block;
+    height: 100%;
+    width: auto;
+    aspect-ratio: 264 / 128;
+    overflow: visible;
+  }
+</style>

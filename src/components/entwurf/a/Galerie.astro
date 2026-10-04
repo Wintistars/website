@@ -1,0 +1,479 @@
+---
+// Entwurf A: kompakte Galerie als Bento-Block (1 grosses Bild + bis zu 4 kleine) mit Lightbox.
+// Erwartet die Design-Tokens von Entwurf A (--r-l, --sh-1, --ease …) vom umgebenden `.c`.
+// Die Reveal-Klasse `.rv` wird vom Seitenscript in c.astro beobachtet (setzt `.is-in`).
+interface Foto {
+  titel: string;
+  url: string;
+  breite: number;
+  hoehe: number;
+}
+interface Props {
+  fotos: Foto[];
+  /** Höchstens so viele Bilder auf der Startseite zeigen */
+  max?: number;
+}
+const { fotos: alle, max = 5 } = Astro.props;
+const fotos = alle.slice(0, max);
+const n = fotos.length;
+
+/** Wix-URLs lassen sich in der Breite skalieren (w_…,h_…); andere Quellen bleiben unverändert. */
+const skaliert = (f: Foto, w: number) => {
+  const breite = Math.min(w, f.breite);
+  const hoehe = Math.round((breite * f.hoehe) / f.breite);
+  return /w_\d+,h_\d+/.test(f.url) ? f.url.replace(/w_\d+,h_\d+/, `w_${breite},h_${hoehe}`) : f.url;
+};
+const srcset = (f: Foto) =>
+  /w_\d+,h_\d+/.test(f.url) ? [480, 800, 1200].map((w) => `${skaliert(f, w)} ${Math.min(w, f.breite)}w`).join(', ') : undefined;
+---
+
+{
+  n > 0 && (
+    <div class="galerie" data-galerie>
+      <ul class="g-raster" data-n={n}>
+        {fotos.map((f, i) => (
+          <li class="g-zelle rv" style={`--d:${i * 90}ms`}>
+            <button type="button" class="g-kachel" data-lb-index={i} aria-label={`${f.titel} – Bild vergrössern`}>
+              <img
+                src={skaliert(f, 800)}
+                srcset={srcset(f)}
+                sizes={i === 0 ? '(min-width: 700px) 50vw, 100vw' : '(min-width: 700px) 25vw, 50vw'}
+                alt={f.titel}
+                width={f.breite}
+                height={f.hoehe}
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="g-legende" aria-hidden="true">{f.titel}</span>
+              <span class="g-lupe" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5" />
+                </svg>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <dialog class="lb" data-lb aria-label="Bildansicht">
+        <figure class="lb-figur">
+          <img class="lb-bild" data-lb-bild alt="" />
+          <figcaption class="lb-legende">
+            <span data-lb-titel></span>
+            {n > 1 && <span class="lb-zaehler" data-lb-zaehler></span>}
+          </figcaption>
+        </figure>
+        <button type="button" class="lb-knopf lb-zu" data-lb-zu aria-label="Schliessen">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+        {n > 1 && (
+          <>
+            <button type="button" class="lb-knopf lb-zurueck" data-lb-schritt="-1" aria-label="Vorheriges Bild">
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7" />
+              </svg>
+            </button>
+            <button type="button" class="lb-knopf lb-weiter" data-lb-schritt="1" aria-label="Nächstes Bild">
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </>
+        )}
+      </dialog>
+      <script type="application/json" data-lb-daten set:html={JSON.stringify(fotos)} />
+    </div>
+  )
+}
+
+<script>
+  type Foto = { titel: string; url: string; breite: number; hoehe: number };
+
+  document.querySelectorAll<HTMLElement>('[data-galerie]').forEach((root) => {
+    const dlg = root.querySelector<HTMLDialogElement>('[data-lb]');
+    const bild = root.querySelector<HTMLImageElement>('[data-lb-bild]');
+    const titel = root.querySelector<HTMLElement>('[data-lb-titel]');
+    const zaehler = root.querySelector<HTMLElement>('[data-lb-zaehler]');
+    const fotos: Foto[] = JSON.parse(root.querySelector('[data-lb-daten]')?.textContent || '[]');
+    if (!dlg || !bild || !titel || fotos.length === 0) return;
+
+    let aktuell = 0;
+    let ausloeser: HTMLElement | null = null;
+
+    const zeige = (i: number) => {
+      aktuell = (i + fotos.length) % fotos.length;
+      const f = fotos[aktuell];
+      bild.classList.remove('ist-neu');
+      bild.src = f.url;
+      bild.width = f.breite;
+      bild.height = f.hoehe;
+      bild.alt = f.titel;
+      titel.textContent = f.titel;
+      if (zaehler) zaehler.textContent = `${aktuell + 1} / ${fotos.length}`;
+      void bild.offsetWidth;
+      bild.classList.add('ist-neu');
+      // Nachbarbilder vorladen
+      [aktuell + 1, aktuell - 1].forEach((j) => {
+        const n = fotos[(j + fotos.length) % fotos.length];
+        if (n) new Image().src = n.url;
+      });
+    };
+
+    root.querySelectorAll<HTMLButtonElement>('[data-lb-index]').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        ausloeser = btn;
+        zeige(Number(btn.dataset.lbIndex));
+        dlg.showModal();
+      }),
+    );
+    root.querySelectorAll<HTMLButtonElement>('[data-lb-schritt]').forEach((btn) =>
+      btn.addEventListener('click', () => zeige(aktuell + Number(btn.dataset.lbSchritt))),
+    );
+    root.querySelector('[data-lb-zu]')?.addEventListener('click', () => dlg.close());
+
+    // Klick auf den abgedunkelten Hintergrund schliesst
+    dlg.addEventListener('click', (e) => {
+      if (e.target === dlg) dlg.close();
+    });
+    dlg.addEventListener('keydown', (e) => {
+      if (fotos.length < 2) return;
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        zeige(aktuell + 1);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        zeige(aktuell - 1);
+      }
+    });
+    // Escape schliesst nativ; Fokus zurück auf die geöffnete Kachel
+    dlg.addEventListener('close', () => {
+      ausloeser?.focus({ preventScroll: true });
+      ausloeser = null;
+    });
+
+    // Wischen auf Touch-Geräten
+    let startX = 0;
+    let startY = 0;
+    dlg.addEventListener(
+      'touchstart',
+      (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      },
+      { passive: true },
+    );
+    dlg.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (fotos.length > 1 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) zeige(aktuell + (dx < 0 ? 1 : -1));
+    });
+  });
+</script>
+
+<style>
+  /* ============ Raster ============ */
+  .g-raster {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: clamp(120px, 34vw, 190px);
+    gap: var(--gap, 14px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .g-zelle:first-child {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+  /* Ungerade Restmenge: letzte Kachel über die ganze Breite */
+  .g-zelle:last-child:nth-child(even) {
+    grid-column: span 2;
+  }
+  .g-raster[data-n='1'] .g-zelle:first-child {
+    grid-row: span 2;
+  }
+
+  @media (min-width: 700px) {
+    .g-raster {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-auto-rows: clamp(150px, 15vw, 205px);
+    }
+    .g-zelle:last-child:nth-child(even) {
+      grid-column: auto;
+    }
+    /* 1 Bild: breit; 2 Bilder: zwei gleich grosse */
+    .g-raster[data-n='1'] .g-zelle {
+      grid-column: span 4;
+    }
+    .g-raster[data-n='2'] .g-zelle {
+      grid-column: span 2;
+      grid-row: span 2;
+    }
+    /* 3 Bilder: gross links, zwei breite rechts */
+    .g-raster[data-n='3'] .g-zelle:not(:first-child) {
+      grid-column: span 2;
+    }
+    /* 4 Bilder: gross links, oben rechts breit, unten zwei kleine */
+    .g-raster[data-n='4'] .g-zelle:nth-child(2) {
+      grid-column: span 2;
+    }
+  }
+
+  /* ============ Kachel ============ */
+  .g-zelle {
+    min-width: 0;
+  }
+  .g-kachel {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-l, 28px);
+    overflow: hidden;
+    background: var(--navy, #1c2232);
+    box-shadow: var(--sh-1);
+    cursor: zoom-in;
+    color: #fff;
+    text-align: left;
+    transition:
+      transform 0.45s var(--ease),
+      box-shadow 0.45s var(--ease);
+  }
+  .g-zelle:not(:first-child) .g-kachel {
+    border-radius: var(--r-m, 20px);
+  }
+  .g-kachel:hover,
+  .g-kachel:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: var(--sh-2);
+  }
+  .g-kachel img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+    transition: transform 0.8s var(--ease);
+  }
+  .g-kachel:hover img {
+    transform: scale(1.05);
+  }
+  .g-legende {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 2.2rem 1rem 0.8rem;
+    background: linear-gradient(to top, rgb(12 17 28 / 0.78), rgb(12 17 28 / 0));
+    font-size: 0.82rem;
+    font-weight: 650;
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+  .g-zelle:first-child .g-legende {
+    padding: 3rem 1.4rem 1.1rem;
+    font-stretch: 112%;
+    font-weight: 800;
+    font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+  }
+  .g-lupe {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.9);
+    color: var(--navy, #1c2232);
+    opacity: 0;
+    transform: scale(0.8);
+    transition:
+      opacity 0.3s var(--ease),
+      transform 0.3s var(--ease);
+  }
+  .g-kachel:hover .g-lupe,
+  .g-kachel:focus-visible .g-lupe {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ============ Lightbox ============ */
+  .lb {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: clamp(3.5rem, 6vw, 4.5rem) clamp(0.75rem, 6vw, 5.5rem) 1.25rem;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    overflow: hidden;
+  }
+  .lb[open] {
+    display: grid;
+    place-items: center;
+  }
+  .lb::backdrop {
+    background: rgb(10 14 24 / 0.93);
+  }
+  :global(html:has(.lb[open])) {
+    overflow: hidden;
+  }
+  .lb-figur {
+    display: grid;
+    justify-items: center;
+    gap: 0.9rem;
+    max-width: 100%;
+    max-height: 100%;
+    min-height: 0;
+    margin: 0;
+  }
+  .lb-bild {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100dvh - 9.5rem);
+    width: auto;
+    height: auto;
+    border-radius: var(--r-m, 20px);
+    box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.9);
+    user-select: none;
+  }
+  .lb-legende {
+    display: flex;
+    gap: 1rem;
+    align-items: baseline;
+    justify-content: center;
+    flex-wrap: wrap;
+    font-weight: 650;
+    text-align: center;
+  }
+  .lb-zaehler {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgb(255 255 255 / 0.62);
+    font-variant-numeric: tabular-nums;
+  }
+  .lb-knopf {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid rgb(255 255 255 / 0.18);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.1);
+    color: #fff;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background 0.2s;
+  }
+  .lb-knopf:hover {
+    background: rgb(255 255 255 / 0.22);
+  }
+  .lb-knopf:focus-visible {
+    outline: 3px solid var(--orange, #b9612a);
+    outline-offset: 3px;
+  }
+  .lb-zu {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+  .lb-zurueck,
+  .lb-weiter {
+    top: 50%;
+    translate: 0 -50%;
+  }
+  .lb-zurueck {
+    left: clamp(0.5rem, 1.5vw, 1.25rem);
+  }
+  .lb-weiter {
+    right: clamp(0.5rem, 1.5vw, 1.25rem);
+  }
+  @media (max-width: 699px) {
+    /* Auf dem Handy: Pfeile unten, das Bild bekommt die ganze Breite (zusätzlich Wischen) */
+    .lb {
+      padding-bottom: 5rem;
+    }
+    .lb-zurueck,
+    .lb-weiter {
+      top: auto;
+      bottom: 1rem;
+      translate: none;
+    }
+    .lb-zurueck {
+      left: calc(50% - 56px);
+    }
+    .lb-weiter {
+      right: calc(50% - 56px);
+    }
+    .lb-bild {
+      max-height: calc(100dvh - 12rem);
+      border-radius: var(--r-s, 14px);
+    }
+  }
+
+  /* ============ Bewegung ============ */
+  :global(.js) .rv {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.8s var(--ease) var(--d, 0ms),
+      transform 0.8s var(--ease) var(--d, 0ms);
+  }
+  :global(.js) .rv:global(.is-in) {
+    opacity: 1;
+    transform: none;
+  }
+  .lb[open] {
+    animation: lb-auf 0.3s var(--ease);
+  }
+  .lb[open]::backdrop {
+    animation: lb-hg 0.3s ease;
+  }
+  .lb-bild:global(.ist-neu) {
+    animation: lb-bild 0.35s var(--ease);
+  }
+  @keyframes lb-auf {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+  @keyframes lb-hg {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes lb-bild {
+    from {
+      opacity: 0.2;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .g-kachel,
+    .g-kachel img,
+    .g-lupe {
+      transition: none;
+    }
+    .g-kachel:hover,
+    .g-kachel:hover img {
+      transform: none;
+    }
+    .lb[open],
+    .lb[open]::backdrop,
+    .lb-bild:global(.ist-neu) {
+      animation: none;
+    }
+    :global(.js) .rv {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>
