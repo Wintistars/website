@@ -1,6 +1,7 @@
 ---
 // Startseite: Hero (Taktiktafel), Matchplan, News, Team, Club, Galerie, Kontakt.
 // Texte: Sanity-Seite «home» (Einleitung = Hero-Text, Inhalt = «Über uns»), Eckdaten aus «Club – Allgemein».
+// Das Menü springt zu den Abschnitten; ausführliche Unterseiten gibt es nur für Spielplan, News und Galerie.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/start/Hero.astro';
 import SektionKopf from '../components/SektionKopf.astro';
@@ -78,26 +79,28 @@ const fakten = verein?.fakten ?? [];
     </div>
   </section>
 
-  <!-- NEWS -->
-  {
-    news.length > 0 && (
-      <section class="sektion wrap" id="news" aria-labelledby="news-titel">
-        <SektionKopf kicker="Aktuell" titel="News" id="news-titel" mehr={{ href: '/news/', label: 'Alle News' }} />
+  <!-- NEWS (immer da: Ziel des Menüpunkts) -->
+  <section class="sektion wrap" id="news" aria-labelledby="news-titel">
+    <SektionKopf kicker="Aktuell" titel="News" id="news-titel" mehr={news.length > 0 ? { href: '/news/', label: 'Alle News' } : undefined} />
+    {
+      news.length > 0 ? (
         <div class="news-grid">
           {news.map((n, i) => (
             <NewsKarte news={n} verzoegerung={i * 110} />
           ))}
         </div>
-      </section>
-    )
-  }
+      ) : (
+        <p class="blatt leer-blatt">Noch keine News. Schau bald wieder vorbei.</p>
+      )
+    }
+  </section>
 
   <!-- TEAM: Kadertafel, im Hintergrund die Eismaschine -->
-  <TeamBand spieler={spieler} teamfoto={team?.teamfoto} mehr={{ href: '/team/', label: 'Zum ganzen Team' }} />
+  <TeamBand spieler={spieler} teamfoto={team?.teamfoto} trainer={team?.trainer} beschreibung={team?.beschreibung} />
 
   <!-- ÜBER UNS & ERFOLGE -->
   <section class="sektion wrap" id="club" aria-labelledby="club-titel">
-    <SektionKopf kicker="Club" titel="Über uns" id="club-titel" mehr={{ href: '/club/', label: 'Mehr über den Club' }} />
+    <SektionKopf kicker="Club" titel="Über uns" id="club-titel" />
     <div class="club-grid">
       <div class="ueber rv" data-rv>
         {
@@ -109,27 +112,22 @@ const fakten = verein?.fakten ?? [];
         }
         <Fakten fakten={fakten} />
         <div class="ueber-cta">
-          <a class="knopf knopf-voll" href="/club/">Zum Club</a>
-          <a class="knopf" href="#kontakt">Kontakt</a>
+          <a class="knopf knopf-voll" href="#kontakt">Kontakt aufnehmen</a>
         </div>
       </div>
       <Erfolge erfolge={team?.erfolge ?? []} verzoegerung={120} />
     </div>
   </section>
 
-  <!-- GALERIE (kompakt) -->
-  {
-    fotos.length > 0 && (
-      <section class="sektion wrap" id="galerie" aria-labelledby="galerie-titel">
-        <SektionKopf kicker="Bilder" titel="Galerie" id="galerie-titel" mehr={{ href: '/galerie/', label: 'Zur Galerie' }} />
-        <Galerie fotos={fotos} max={4} />
-      </section>
-    )
-  }
+  <!-- GALERIE (kompakt; immer da: Ziel des Links im Fuss) -->
+  <section class="sektion wrap" id="galerie" aria-labelledby="galerie-titel">
+    <SektionKopf kicker="Bilder" titel="Galerie" id="galerie-titel" mehr={fotos.length > 0 ? { href: '/galerie/', label: 'Alle Fotos' } : undefined} />
+    {fotos.length > 0 ? <Galerie fotos={fotos} max={4} /> : <p class="blatt leer-blatt">Fotos folgen.</p>}
+  </section>
 
   <!-- KONTAKT -->
   <section class="sektion wrap" id="kontakt" aria-labelledby="kontakt-titel">
     <SektionKopf kicker="Mitspielen?" titel="Kontakt" id="kontakt-titel" />
-    <Kontakt verein={verein} ausfuehrlich={false} />
+    <Kontakt verein={verein} />
   </section>
 </BaseLayout>
