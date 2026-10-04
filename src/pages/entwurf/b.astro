@@ -8,7 +8,9 @@ import '@fontsource/permanent-marker';
 import EntwurfLayout from '../../layouts/EntwurfLayout.astro';
 import Magnet from '../../components/entwurf/b/Magnet.astro';
 import Galerie from '../../components/entwurf/b/Galerie.astro';
-import { getEntwurfDaten } from '../../lib/entwurf';
+import Eismaschine from '../../components/entwurf/c/Eismaschine.astro';
+import { eisTexturDaten } from '../../components/entwurf/eisTextur';
+import { getEntwurfDaten, LOGO_PLATZHALTER } from '../../lib/entwurf';
 import { ART_LABEL, ausgang, gegner, type Spiel } from '../../lib/spielplan';
 import { formatSpieltag, formatUhrzeit, datumTeile, ZEITZONE } from '../../lib/zeit';
 import { GRUENDUNGSJAHR, VEREIN } from '../../lib/verein';
@@ -239,6 +241,11 @@ const feldNummern = d.spieler
 const HERO_NR = [feldNummern[0] ?? 4, feldNummern[3] ?? 12, feldNummern[6] ?? 22, feldNummern[8] ?? 27];
 /** Pool für die Zufallsauswahl im Hero (pro Spielzug neu gemischt, damit niemand bevorzugt wird) */
 const HERO_POOL = feldNummern.length >= 4 ? feldNummern : [4, 12, 22, 27];
+
+// ---------- Eis aufbereiten (Klick aufs Logo) ----------
+/** Benutztes Eis wie in Entwurf C (gleiche Textur) */
+const EIS_TEXTUR = eisTexturDaten();
+
 // IIHF-Feld in Dezimetern: Bullykreise der Zonen (x ±20 m, y ±7 m), Punkte der neutralen Zone (1.5 m vor der blauen Linie)
 const HF_KREISE: P[] = [
   [-200, -70],
@@ -262,6 +269,7 @@ const HF_PUNKTE: P[] = [
 
   <div class="d">
     <div class="glanz" aria-hidden="true"></div>
+    <Eismaschine defs />
     <a class="skip" href="#inhalt">Zum Inhalt springen</a>
 
     <!-- KOPF: oben transparent auf der Tafel, beim Scrollen schmal mit milchigem Hintergrund -->
@@ -456,6 +464,10 @@ const HF_PUNKTE: P[] = [
               <path class="tor-rahmen" d="M260 -9.15 H268 Q271 -9.15 271 -6 V6 Q271 9.15 268 9.15 H260" />
             </g>
           </svg>
+          <!-- Eis aufbereiten (Klick aufs Logo): Frost wie in Entwurf C auf Eis und Logo, die Eismaschine räumt ihn
+               in Ovalen von der Mitte nach aussen -->
+          <canvas class="ep-frost" aria-hidden="true" data-ep-frost data-textur={EIS_TEXTUR}></canvas>
+          <canvas class="ep-nass" aria-hidden="true" data-ep-nass></canvas>
           </div>
           </div>
           <div class="feld-logo">
@@ -464,6 +476,12 @@ const HF_PUNKTE: P[] = [
               eager
               alt="Club-Logo EHC Wintistars: roter Löwe im runden Badge «Wintistars Hockey · Est. 1993»"
             />
+            <canvas class="ep-frost ep-logo-frost" aria-hidden="true" data-ep-logo></canvas>
+            <button type="button" class="lp-knopf" aria-label="Eis von der Eismaschine aufbereiten lassen" data-lp-knopf></button>
+          </div>
+          <!-- Die Maschine fährt über Eis und Logo; erst links vom Logo läuft sie weich aus -->
+          <div class="ep-ebene" aria-hidden="true">
+            <div class="ep-zb" data-ep-zb><Eismaschine logo={LOGO_PLATZHALTER} richtung={1} /></div>
           </div>
           <p class="feld-titel" aria-hidden="true"><span data-zug-titel>{ZUEGE_BREIT[0].titel}</span></p>
           <p class="tor-notiz" aria-hidden="true" data-tor-notiz>Tor!</p>
@@ -695,6 +713,11 @@ const HF_PUNKTE: P[] = [
           <circle cx="250" cy="140" r="150" />
           <circle cx="250" cy="460" r="150" />
         </svg>
+        <!-- Im Hintergrund dreht die Eismaschine gemächlich ihre Runden und hinterlässt eine nasse Spur -->
+        <div class="tb-hinter" aria-hidden="true" data-tb-zb>
+          <canvas class="tb-wasser" data-tb-wasser></canvas>
+          <div class="tb-zb"><Eismaschine logo={LOGO_PLATZHALTER} richtung={1} /></div>
+        </div>
         <div class="wrap tb-innen">
         <div class="sek-kopf">
           <div class="wisch" data-rv>
@@ -1102,6 +1125,278 @@ const HF_PUNKTE: P[] = [
     alle.forEach((el) => el.classList.add('is-in'));
   }
 
+  // ---------- Hero: Eis aufbereiten (Klick aufs Logo) ----------
+  // Die Spielzüge ruhen ausgeblendet, Eis und Logo bekommen Frost (Textur aus Entwurf C). Die Eismaschine fährt
+  // gleitende Ovale wie in der Halle: oben an der Bande beginnend, jede Runde eine Abzieherbreite tiefer.
+  // Jede Runde kommt links aus dem weichen Feldrand
+  // (dort ist die andere Hälfte) und fährt dort wieder hinaus. Hinter dem Gummi ist das Eis klar und kurz nass.
+  // Koordinaten in Metern (Mitte 0/0 = Mittelpunkt und Logomitte, Bande bei x 30 und y ±15).
+  const epFeld = document.querySelector<HTMLElement>('[data-feld]');
+  const epFrost = document.querySelector<HTMLCanvasElement>('[data-ep-frost]');
+  if (epFeld && epFrost && !reduziert) {
+    const nassL = epFeld.querySelector<HTMLCanvasElement>('[data-ep-nass]')!;
+    const logoL = epFeld.querySelector<HTMLCanvasElement>('[data-ep-logo]')!;
+    const maschine = epFeld.querySelector<HTMLElement>('[data-ep-zb]')!;
+    const box = epFrost.parentElement!;
+    const fx = epFrost.getContext('2d');
+    const lx = logoL.getContext('2d');
+    const nx = nassL.getContext('2d');
+    const textur = new Image();
+    textur.src = epFrost.dataset.textur ?? '';
+
+    const H = 3.4;
+    const L = (H * 264) / 128;
+    const CW = (H * 120) / 128;
+    const HECK = (L * 126) / 264;
+    const AUSSEN = -17; // weit links ausserhalb des sichtbaren Felds: fährt ruhig aus dem Feldrand herein
+
+    /** Fahrweg als dichte Punktfolge (ca. 0.25 m) mit Länge und Fahrzeit */
+    const weg = (() => {
+      const pts: [number, number][] = [[AUSSEN, -13.4]];
+      const linie = (x: number, y: number) => {
+        const [x0, y0] = pts[pts.length - 1];
+        const n = Math.max(1, Math.ceil(Math.hypot(x - x0, y - y0) / 0.25));
+        for (let i = 1; i <= n; i++) pts.push([x0 + ((x - x0) * i) / n, y0 + ((y - y0) * i) / n]);
+      };
+      const bogen = (cx: number, cy: number, r: number, von: number, bis: number) => {
+        const n = Math.max(2, Math.ceil((Math.abs(bis - von) * r) / 0.25));
+        for (let i = 1; i <= n; i++) {
+          const w = von + ((bis - von) * i) / n;
+          pts.push([cx + Math.cos(w) * r, cy + Math.sin(w) * r]);
+        }
+      };
+      // Gleitende Ovale wie in der Halle: jede Runde kommt oben herein, wendet in einem weiten Halbkreis
+      // (Radius 7.45 m) um das Ende und fährt 14.9 m tiefer wieder links hinaus. Die erste Runde beginnt ganz oben an
+      // der Bande und geht knapp unter die Mitte; jede weitere Runde liegt eine Abzieherbreite (3 m) tiefer, die
+      // letzte fährt unten an der Bande hinaus. So decken sich die Bahnen ohne enge Kurven.
+      // Die erste und die letzte Runde folgen an ihrer Bandenseite der Bandenrundung, damit die Ecken sauber werden.
+      const R = 7.45;
+      const ENDE = 28.4; // äusserster Punkt der Wende, knapp vor der Bande
+      const [EX, EY, ER] = [21.5, 6.5, 6.9]; // Mittelpunkt und Radius der Ecke, parallel zur Bande
+      const r = 4; // Wende zur Mitte hin
+      for (let k = 0; k < 5; k++) {
+        const oben = -13.4 + 2.95 * k;
+        const unten = oben + 2 * R;
+        linie(AUSSEN, oben);
+        if (k === 0) {
+          linie(EX, oben);
+          bogen(EX, -EY, ER, -Math.PI / 2, 0);
+          linie(ENDE, unten - r);
+          bogen(ENDE - r, unten - r, r, 0, Math.PI / 2);
+        } else if (k === 4) {
+          linie(ENDE - r, oben);
+          bogen(ENDE - r, oben + r, r, -Math.PI / 2, 0);
+          linie(ENDE, EY);
+          bogen(EX, EY, ER, 0, Math.PI / 2);
+        } else {
+          linie(ENDE - R, oben);
+          bogen(ENDE - R, oben + R, R, -Math.PI / 2, Math.PI / 2);
+        }
+        linie(AUSSEN, unten);
+      }
+      const lang = [0];
+      for (let i = 1; i < pts.length; i++) lang.push(lang[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      // Zeit je Stück: auf dem Eis 14 m/s, ausserhalb des Bilds rund achtmal so schnell
+      const zeit = [0];
+      for (let i = 1; i < pts.length; i++) {
+        const aussen = Math.max(pts[i][0], pts[i - 1][0]) < AUSSEN + 3;
+        zeit.push(zeit[i - 1] + (lang[i] - lang[i - 1]) / (aussen ? 110 : 14));
+      }
+      return { pts, lang, zeit, gesamt: lang[lang.length - 1], dauer: zeit[zeit.length - 1] };
+    })();
+    const suche = (arr: number[], v: number) => {
+      let [lo, hi] = [0, arr.length - 1];
+      while (hi - lo > 1) {
+        const m = (lo + hi) >> 1;
+        if (arr[m] <= v) lo = m;
+        else hi = m;
+      }
+      return lo;
+    };
+    const punkt = (d: number): [number, number] => {
+      const s = Math.min(weg.gesamt, Math.max(0, d));
+      const i = suche(weg.lang, s);
+      const j = Math.min(i + 1, weg.pts.length - 1);
+      const t = (s - weg.lang[i]) / Math.max(1e-6, weg.lang[j] - weg.lang[i]);
+      return [weg.pts[i][0] + (weg.pts[j][0] - weg.pts[i][0]) * t, weg.pts[i][1] + (weg.pts[j][1] - weg.pts[i][1]) * t];
+    };
+    const strecke = (sek: number) => {
+      const i = suche(weg.zeit, sek);
+      const j = Math.min(i + 1, weg.zeit.length - 1);
+      const t = (sek - weg.zeit[i]) / Math.max(1e-6, weg.zeit[j] - weg.zeit[i]);
+      return weg.lang[i] + (weg.lang[j] - weg.lang[i]) * Math.min(1, t);
+    };
+
+    /** Leinwand vorbereiten; gezeichnet wird in Metern, 0/0 in der Mitte des Elements */
+    const k = () => box.clientWidth / 60;
+    const vorbereiten = (c: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const el = c.parentElement!;
+      const [w, h] = [el.clientWidth, el.clientHeight];
+      c.width = Math.round(w * dpr);
+      c.height = Math.round(h * dpr);
+      const m = k() * dpr;
+      ctx.setTransform(m, 0, 0, m, (w * dpr) / 2, (h * dpr) / 2);
+    };
+    const rink = (ctx: CanvasRenderingContext2D) => {
+      ctx.beginPath();
+      ctx.roundRect(-30, -15, 60, 30, 8.5);
+    };
+    /** Benutztes Eis wie in Entwurf C: matter Grundton, Schnee an der Bande, Textur mit Kufenspuren */
+    const frostFuellen = (ctx: CanvasRenderingContext2D) => {
+      ctx.fillStyle = 'rgba(226, 231, 235, 0.86)';
+      ctx.fillRect(-30, -15, 60, 30);
+      for (const y of [-15, 15]) {
+        const g = ctx.createLinearGradient(0, y, 0, y * 0.7);
+        g.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+        g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(-30, -15, 60, 30);
+      }
+      ctx.fillStyle = 'rgba(236, 240, 243, 0.4)';
+      ctx.fillRect(-30, -15, 60, 30);
+      if (textur.complete && textur.naturalWidth) {
+        const muster = ctx.createPattern(textur, 'repeat');
+        if (muster) {
+          muster.setTransform(new DOMMatrix().scale(24 / textur.naturalWidth, 12 / textur.naturalHeight));
+          ctx.fillStyle = muster;
+          ctx.fillRect(-30, -15, 60, 30);
+        }
+      }
+    };
+    const frostMalen = () => {
+      for (const [c, ctx] of [
+        [epFrost, fx],
+        [logoL, lx],
+      ] as const) {
+        if (!ctx) continue;
+        vorbereiten(c, ctx);
+        ctx.save();
+        if (c === epFrost) {
+          rink(ctx);
+          ctx.clip();
+        }
+        frostFuellen(ctx);
+        ctx.restore();
+      }
+    };
+    /** Vom zuletzt geputzten Stück bis zur Hinterkante wegradieren (klare Kante am Gummi), auf Eis und Logo */
+    const radieren = (von: number, bis: number) => {
+      if (bis <= von) return;
+      for (const ctx of [fx, lx]) {
+        if (!ctx) continue;
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = CW;
+        ctx.lineCap = 'butt';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        const start = Math.max(0, von - 0.15);
+        ctx.moveTo(...punkt(start));
+        for (let d = start + 0.25; d < bis; d += 0.25) ctx.lineTo(...punkt(d));
+        ctx.lineTo(...punkt(bis));
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+    /** Kurze nasse Spur hinter dem Gummi, nach hinten auslaufend (wie beim Team) */
+    const nassMalen = (hinten: number) => {
+      if (!nx) return;
+      nx.save();
+      nx.setTransform(1, 0, 0, 1, 0, 0);
+      nx.clearRect(0, 0, nassL.width, nassL.height);
+      nx.restore();
+      const von = Math.max(0, hinten - 4.5);
+      if (hinten - von < 0.5) return;
+      const links: [number, number][] = [];
+      const rechts: [number, number][] = [];
+      for (let d = von; d <= hinten + 0.01; d += 0.3) {
+        const [x, y] = punkt(d);
+        const [ax, ay] = punkt(d - 0.2);
+        const [bx, by] = punkt(d + 0.2);
+        const l = Math.hypot(bx - ax, by - ay) || 1;
+        const [qx, qy] = [(-(by - ay) / l) * (CW / 2), ((bx - ax) / l) * (CW / 2)];
+        links.push([x + qx, y + qy]);
+        rechts.push([x - qx, y - qy]);
+      }
+      const [kx, ky] = punkt(hinten);
+      const [ex, ey] = punkt(von);
+      const g = nx.createLinearGradient(kx, ky, ex, ey);
+      g.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+      g.addColorStop(0.06, 'rgba(225, 238, 252, 0.55)');
+      g.addColorStop(1, 'rgba(225, 238, 252, 0)');
+      nx.save();
+      rink(nx);
+      nx.clip();
+      nx.beginPath();
+      links.forEach(([x, y], i) => (i ? nx.lineTo(x, y) : nx.moveTo(x, y)));
+      rechts.reverse().forEach(([x, y]) => nx.lineTo(x, y));
+      nx.closePath();
+      nx.fillStyle = g;
+      nx.fill();
+      nx.restore();
+    };
+
+    let amAufbereiten = false;
+    const aufbereiten = () =>
+      new Promise<void>((fertig) => {
+        frostMalen();
+        if (nx) vorbereiten(nassL, nx);
+        nassL.style.opacity = '1';
+        epFeld.classList.add('am-aufbereiten');
+        // Rink-Mitte in der Ebene der Maschine; die Maschine bleibt übers ganze Logo sichtbar und läuft erst an
+        // dessen linkem Rand weich aus (dort endet links das sichtbare Eis)
+        const ebene = maschine.parentElement!;
+        const e = ebene.getBoundingClientRect();
+        const b = box.getBoundingClientRect();
+        const [mx, my] = [b.left - e.left + b.width / 2, b.top - e.top + b.height / 2];
+        const l = logoL.getBoundingClientRect();
+        const kante = l.left + l.width * 0.025 - e.left;
+        const maske = `linear-gradient(to right, transparent ${(kante - 8).toFixed(0)}px, #000 ${(kante + 14).toFixed(0)}px)`;
+        ebene.style.setProperty('mask-image', maske);
+        ebene.style.setProperty('-webkit-mask-image', maske);
+        let t0 = 0;
+        let geputzt = 0;
+        const start = 600; // Frost liegt, dann kommt die Maschine
+        const bild = (t: number) => {
+          t0 ||= t;
+          const sek = Math.max(0, t - t0 - start) / 1000;
+          const d = strecke(Math.min(sek, weg.dauer));
+          const [x, y] = punkt(d);
+          const [ax, ay] = punkt(d - 0.4);
+          const [bx, by] = punkt(d + 0.4);
+          const winkel = (Math.atan2(by - ay, bx - ax) * 180) / Math.PI;
+          const m = k();
+          maschine.style.visibility = 'visible';
+          maschine.style.transform = `translate(${(mx + x * m - maschine.offsetWidth / 2).toFixed(1)}px, ${(my + y * m - maschine.offsetHeight / 2).toFixed(1)}px) rotate(${winkel.toFixed(1)}deg)`;
+          const hinten = d - HECK;
+          if (hinten > geputzt) {
+            radieren(geputzt, hinten);
+            geputzt = hinten;
+          }
+          nassMalen(hinten);
+          if (sek < weg.dauer) return void requestAnimationFrame(bild);
+          // Reste in den Ecken trocknen weg, dann laufen die Spielzüge weiter
+          maschine.style.visibility = '';
+          nassL.style.opacity = '0';
+          epFeld.classList.remove('am-aufbereiten');
+          window.setTimeout(fertig, 1200);
+        };
+        requestAnimationFrame(bild);
+      });
+    const putzpause = (an: boolean) => epFeld.dispatchEvent(new CustomEvent('wb-putzpause', { detail: an }));
+    document.querySelector('[data-lp-knopf]')?.addEventListener('click', () => {
+      if (amAufbereiten) return;
+      amAufbereiten = true;
+      // Frost sofort, gleichzeitig blenden die Spielzüge aus
+      putzpause(true);
+      aufbereiten().then(() => {
+        amAufbereiten = false;
+        putzpause(false);
+      });
+    });
+  }
+
   // ---------- Hero: Spielzüge im Loop ----------
   // Ruhiger Ablauf wie an der Taktiktafel: Magnet hebt sich, Linie zeichnet sich, Magnet setzt ab.
   // Je nach Fensterbreite ist ein anderer Satz Züge sichtbar (breit / mittel / schmal, siehe CSS).
@@ -1144,7 +1439,7 @@ const HF_PUNKTE: P[] = [
       requestAnimationFrame(bild);
     };
     const pruefe = () => {
-      const soll = sichtbar && !document.hidden;
+      const soll = sichtbar && !document.hidden && !putzpause;
       if (soll && !laeuft) {
         laeuft = true;
         zuletzt = 0;
@@ -1156,6 +1451,16 @@ const HF_PUNKTE: P[] = [
       sichtbar = e[0].isIntersecting;
       pruefe();
     }).observe(feld);
+    // Eis wird auf Klick aufbereitet: Spielzüge brechen ab und sind ausgeblendet; danach beginnt der Ablauf
+    // frisch auf dem sauberen Eis (offene Tweens werden verworfen, der alte Ablauf bleibt einfach stehen)
+    let putzpause = false;
+    feld.addEventListener('wb-putzpause', (e) => {
+      putzpause = (e as CustomEvent<boolean>).detail;
+      feld.classList.toggle('putzpause', putzpause);
+      if (putzpause) aufgaben.clear();
+      else ablauf(600);
+      pruefe();
+    });
     document.addEventListener('visibilitychange', pruefe);
 
     const linear = (t: number) => t;
@@ -1305,10 +1610,13 @@ const HF_PUNKTE: P[] = [
       s.sp.forEach((e) => (e.style.opacity = '0'));
     };
 
-    (async () => {
+    /** Ablauf der Spielzüge von vorne: alles zurücksetzen, kurz warten, dann Zug um Zug */
+    const ablauf = async (vorlauf: number) => {
       ['breit', 'schmal'].forEach((n) => vorbereiten(satz(n)));
-      feld.classList.add('animiert');
-      await warte(1500); // Linien des Feldes zeichnen sich zuerst
+      notiz.classList.remove('zeigen');
+      feld.classList.remove('titel-an');
+      feld.querySelector('.netz')?.removeAttribute('transform');
+      await warte(vorlauf);
       for (;;) {
         const s = satz(setName());
         vorbereiten(s);
@@ -1333,9 +1641,159 @@ const HF_PUNKTE: P[] = [
         }
         notiz.classList.remove('zeigen');
       }
-    })();
+    };
+    feld.classList.add('animiert');
+    ablauf(1500); // Linien des Feldes zeichnen sich zuerst
   }
 
+
+  // ---------- Team-Band: Eismaschine fährt im Hintergrund Runden ----------
+  // Gleitende Ovale wie in der Halle (und wie beim Eisaufbereiten im Hero): lange Geraden über das Band, rechts
+  // eine weite Wende, eine halbe Bandhöhe tiefer zurück, links eine Wende auf die nächste Bahn eine Abzieherbreite
+  // tiefer. Unten angekommen arbeitet sie sich genauso wieder nach oben, endlos. Auf schmalen, hohen Bändern
+  // (Handy) laufen die Ovale der Länge nach. Hinter dem Conditioner bleibt eine kurze nasse Spur.
+  // Läuft nur, solange das Band sichtbar ist.
+  const tbHinter = document.querySelector<HTMLElement>('[data-tb-zb]');
+  if (tbHinter && !reduziert && 'IntersectionObserver' in window) {
+    const maschine = tbHinter.querySelector<HTMLElement>('.tb-zb')!;
+    const leinwand = tbHinter.querySelector<HTMLCanvasElement>('[data-tb-wasser]')!;
+    const ctx = leinwand.getContext('2d');
+    let laenge = 0;
+    /** Fahrweg als dichte Punktfolge (ca. 3 px) mit aufsummierter Länge */
+    let pts: [number, number][] = [];
+    let lang: number[] = [];
+    let mL = 0;
+    let mH = 0;
+    /** Nasse Spur: nur die letzten Meter hinter dem Conditioner (linke/rechte Kante je Schritt) */
+    let kanten: [number, number, number, number][] = [];
+
+    const vermessen = () => {
+      mL = maschine.offsetWidth;
+      mH = maschine.offsetHeight;
+      const w = tbHinter.clientWidth;
+      const h = tbHinter.clientHeight;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      if (leinwand.width !== Math.round(w * dpr) || leinwand.height !== Math.round(h * dpr)) {
+        leinwand.width = Math.round(w * dpr);
+        leinwand.height = Math.round(h * dpr);
+        ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+        kanten = [];
+      }
+      // Rechnen in einem Rahmen, in dem die lange Seite waagrecht liegt; bei hohen Bändern wird gespiegelt
+      const quer = h > w;
+      const [L, S] = quer ? [h, w] : [w, h];
+      const rand = mH * 1.1;
+      const [x0, x1, y0, y1] = [rand, L - rand, rand, S - rand];
+      const halb = (y1 - y0) / 2;
+      const n = Math.max(1, Math.round(halb / (mH * 0.85)));
+      const p = halb / n;
+      const rR = halb / 2;
+      const neu: [number, number][] = [];
+      const linie = (x: number, y: number) => {
+        const [xa, ya] = neu.length ? neu[neu.length - 1] : [x, y];
+        const k = Math.max(1, Math.ceil(Math.hypot(x - xa, y - ya) / 3));
+        for (let i = 1; i <= k; i++) neu.push([xa + ((x - xa) * i) / k, ya + ((y - ya) * i) / k]);
+      };
+      // Halbkreis im Uhrzeigersinn um (cx, cy), von oben nach unten (rechts) bzw. von unten nach oben (links)
+      const bogen = (cx: number, cy: number, r: number, von: number, bis: number) => {
+        const k = Math.max(2, Math.ceil((Math.abs(bis - von) * r) / 3));
+        for (let i = 1; i <= k; i++) {
+          const a = von + ((bis - von) * i) / k;
+          neu.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+        }
+      };
+      // Bahnfolge 0, 1, …, n, n−1, …, 1 und wieder 0: hinunter und wieder hinauf
+      const folge = [...Array.from({ length: n + 1 }, (_, k) => k), ...Array.from({ length: n - 1 }, (_, k) => n - 1 - k)];
+      const rStart = (halb + p) / 2; // Wende von Bahn 1 zurück auf Bahn 0
+      neu.push([x0 + rStart, y0]);
+      folge.forEach((k, i) => {
+        const oben = y0 + k * p;
+        const unten = oben + halb;
+        const naechste = y0 + folge[(i + 1) % folge.length] * p;
+        const rL = (unten - naechste) / 2;
+        linie(x1 - rR, oben);
+        bogen(x1 - rR, oben + rR, rR, -Math.PI / 2, Math.PI / 2);
+        linie(x0 + rL, unten);
+        bogen(x0 + rL, naechste + rL, rL, Math.PI / 2, (Math.PI * 3) / 2);
+      });
+      pts = quer ? neu.map(([x, y]) => [y, x]) : neu;
+      lang = [0];
+      for (let i = 1; i < pts.length; i++) lang.push(lang[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      laenge = lang[lang.length - 1];
+    };
+    const punkt = (d: number): [number, number] => {
+      let [lo, hi] = [0, lang.length - 1];
+      while (hi - lo > 1) {
+        const m = (lo + hi) >> 1;
+        if (lang[m] <= d) lo = m;
+        else hi = m;
+      }
+      const t = (d - lang[lo]) / Math.max(1e-6, lang[hi] - lang[lo]);
+      return [pts[lo][0] + (pts[hi][0] - pts[lo][0]) * t, pts[lo][1] + (pts[hi][1] - pts[lo][1]) * t];
+    };
+    vermessen();
+    new ResizeObserver(vermessen).observe(tbHinter);
+
+    /** Spur als eine Fläche, die nach hinten auf null ausläuft (etwa 3 Maschinenlängen) */
+    const wasser = (hx: number, hy: number, a: number) => {
+      if (!ctx) return;
+      const halb = (mH * (116 / 128)) / 2;
+      const [nx, ny] = [-Math.sin(a) * halb, Math.cos(a) * halb];
+      const letzte = kanten[kanten.length - 1];
+      const mx = letzte ? (letzte[0] + letzte[2]) / 2 : 0;
+      const my = letzte ? (letzte[1] + letzte[3]) / 2 : 0;
+      if (letzte && Math.hypot(hx - mx, hy - my) > mL) kanten = [];
+      if (!letzte || Math.hypot(hx - mx, hy - my) > 2) kanten.push([hx + nx, hy + ny, hx - nx, hy - ny]);
+      // Hinten abschneiden, was weiter als die Spurlänge entfernt ist
+      const spurLaenge = mL * 3;
+      let weg = 0;
+      let i = kanten.length - 1;
+      for (; i > 0; i--) {
+        const [p, q] = [kanten[i], kanten[i - 1]];
+        weg += Math.hypot((p[0] + p[2]) / 2 - (q[0] + q[2]) / 2, (p[1] + p[3]) / 2 - (q[1] + q[3]) / 2);
+        if (weg > spurLaenge) break;
+      }
+      kanten = kanten.slice(Math.max(0, i));
+      ctx.clearRect(0, 0, leinwand.width, leinwand.height);
+      if (kanten.length < 2) return;
+      const [k0, kn] = [kanten[0], kanten[kanten.length - 1]];
+      const verlauf = ctx.createLinearGradient(hx, hy, (k0[0] + k0[2]) / 2, (k0[1] + k0[3]) / 2);
+      verlauf.addColorStop(0, 'rgba(175, 208, 250, 0.16)');
+      verlauf.addColorStop(1, 'rgba(175, 208, 250, 0)');
+      ctx.beginPath();
+      ctx.moveTo(kn[0], kn[1]);
+      for (let j = kanten.length - 2; j >= 0; j--) ctx.lineTo(kanten[j][0], kanten[j][1]);
+      for (let j = 0; j < kanten.length; j++) ctx.lineTo(kanten[j][2], kanten[j][3]);
+      ctx.closePath();
+      ctx.fillStyle = verlauf;
+      ctx.fill();
+    };
+
+    let s = 0;
+    let zuletzt = 0;
+    let laeuft = false;
+    const bild = (t: number) => {
+      if (!laeuft) return;
+      const dt = zuletzt ? Math.min(50, t - zuletzt) : 16;
+      zuletzt = t;
+      s += dt * 0.09;
+      s %= laenge;
+      const [x, y] = punkt(s);
+      const [vx, vy] = punkt((s + 4) % laenge);
+      const a = Math.atan2(vy - y, vx - x);
+      const winkel = (a * 180) / Math.PI;
+      maschine.style.transform = `translate(${(x - mL / 2).toFixed(1)}px, ${(y - mH / 2).toFixed(1)}px) rotate(${winkel.toFixed(1)}deg)`;
+      // Hinterkante des Conditioners: 126 von 264 Einheiten hinter der Mitte
+      const heck = (mL * 126) / 264;
+      wasser(x - Math.cos(a) * heck, y - Math.sin(a) * heck, a);
+      requestAnimationFrame(bild);
+    };
+    new IntersectionObserver((e) => {
+      laeuft = e[0].isIntersecting;
+      zuletzt = 0;
+      if (laeuft) requestAnimationFrame(bild);
+    }).observe(tbHinter);
+  }
 
   // ---------- Kadertafel: Spielerkarte ----------
   const ktDialog = document.querySelector<HTMLDialogElement>('[data-kt-dialog]');
@@ -2148,6 +2606,74 @@ const HF_PUNKTE: P[] = [
   .feld-logo :global(.d-magnet) {
     display: block;
   }
+
+  /* ---------- Eis aufbereiten (Klick aufs Logo) ---------- */
+  .ep-frost,
+  .ep-nass,
+  .ep-ebene,
+  .ep-zb,
+  .lp-knopf {
+    display: none;
+  }
+  .ep-frost,
+  .ep-nass {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .ep-frost {
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+  .ep-nass {
+    transition: opacity 1.4s ease;
+  }
+  /* Einfrieren sofort und schnell (Abtrocknen am Schluss bleibt langsam) */
+  .feld.am-aufbereiten .ep-frost {
+    opacity: 1;
+    transition: opacity 0.4s ease-out;
+  }
+  .ep-logo-frost {
+    clip-path: circle(47.5%);
+  }
+  /* Ebene über Eis und Logo; reicht links übers Logo hinaus, die weiche Kante am linken Logorand setzt das Skript */
+  .ep-ebene {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: calc(var(--logo-s) * -0.6);
+    z-index: 3;
+    pointer-events: none;
+  }
+  .ep-zb {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: calc(var(--k) * 3.4);
+    visibility: hidden;
+    will-change: transform;
+  }
+  .lp-knopf {
+    position: absolute;
+    inset: 4%;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+  }
+  .lp-knopf:focus-visible {
+    outline: 2px solid var(--blau);
+    outline-offset: 4px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.d-js) :is(.ep-frost, .ep-nass, .ep-ebene, .ep-zb, .lp-knopf) {
+      display: block;
+    }
+  }
+
   .zset {
     display: none;
   }
@@ -2339,6 +2865,16 @@ const HF_PUNKTE: P[] = [
   }
   .feld.pausiert .tor-notiz {
     animation-play-state: paused;
+  }
+  /* Logo wird auf Klick geputzt: Spielzüge ruhen ausgeblendet */
+  .zuege {
+    transition: opacity 0.4s ease;
+  }
+  .feld.putzpause :is(.zuege, .feld-titel) {
+    opacity: 0;
+  }
+  .feld.putzpause .tor-notiz {
+    visibility: hidden;
   }
   @keyframes tor-pop {
     from {
@@ -3016,6 +3552,33 @@ const HF_PUNKTE: P[] = [
   }
   .team-band :where(a, button):focus-visible {
     outline-color: var(--sand);
+  }
+  /* Eismaschine im Hintergrund des Team-Bands */
+  .tb-hinter {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    display: none;
+    pointer-events: none;
+  }
+  .tb-wasser {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .tb-zb {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: clamp(56px, 6vw, 80px);
+    will-change: transform;
+    opacity: 0.6;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.d-js) .tb-hinter {
+      display: block;
+    }
   }
   .tb-raster {
     display: grid;
