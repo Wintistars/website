@@ -2064,6 +2064,8 @@ const HF_PUNKTE: P[] = [
     position: relative;
     width: var(--feld-b);
     aspect-ratio: 330 / 306;
+    /* Dezenter Schatten am Element ohne Maske, damit er nicht abgeschnitten wird */
+    filter: drop-shadow(0 6px 10px rgb(28 34 50 / 0.1)) drop-shadow(0 1px 2px rgb(28 34 50 / 0.08));
   }
   .feld-clip {
     position: absolute;
