@@ -38,6 +38,7 @@ export function getTeam(): Promise<Team | null> {
   return client.fetch(
     `*[_id == "team"][0] {
       _id, ${image('teamfoto')}, trainer, ${richText('beschreibung')},
+      "erfolge": coalesce(erfolge[]{_key, saison, titel}, []),
       "spieler": coalesce(spieler[]->{${spielerFields}}, [])
     }`,
   );
@@ -67,7 +68,7 @@ export function getSpielplanEinstellungen(): Promise<SpielplanEinstellungen | nu
 export function getSeiten(): Promise<Seite[]> {
   return client.fetch(
     `*[_type == "seite" && defined(slug.current) && slug.current != $home] {
-      _id, titel, "slug": slug.current, ${richText('body')}
+      _id, titel, "slug": slug.current, ${image('titelbild')}, einleitung, ${richText('body')}
     }`,
     { home: HOME_SLUG },
   );
@@ -76,7 +77,9 @@ export function getSeiten(): Promise<Seite[]> {
 /** Startseiten-Inhalt (optional). */
 export function getHome(): Promise<Seite | null> {
   return client.fetch(
-    `*[_type == "seite" && slug.current == $home][0] { _id, titel, "slug": slug.current, ${richText('body')} }`,
+    `*[_type == "seite" && slug.current == $home][0] {
+      _id, titel, "slug": slug.current, ${image('titelbild')}, einleitung, ${richText('body')}
+    }`,
     { home: HOME_SLUG },
   );
 }

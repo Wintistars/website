@@ -37,12 +37,20 @@ export interface Spieler {
   text?: RichText;
 }
 
+/** Eintrag in `team.erfolge` (Titel/Erfolge, neuste zuerst). */
+export interface Erfolg {
+  _key: string;
+  saison: string;
+  titel: string;
+}
+
 /** Singleton `team` (Teaminfos & Kader). Der Teamname ist fest: VEREIN in src/lib/verein.ts. */
 export interface Team {
   _id: string;
   teamfoto?: SanityImage;
   trainer?: string;
   beschreibung?: RichText;
+  erfolge: Erfolg[];
   spieler: Spieler[];
 }
 
@@ -50,6 +58,8 @@ export interface Seite {
   _id: string;
   titel: string;
   slug: string;
+  titelbild?: SanityImage;
+  einleitung?: string;
   body?: RichText;
 }
 

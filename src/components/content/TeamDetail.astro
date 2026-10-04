@@ -19,6 +19,21 @@ const { team } = Astro.props;
   <div class="prose"><RichText value={team.beschreibung} /></div>
 
   {
+    team.erfolge.length > 0 && (
+      <section>
+        <h2>Erfolge</h2>
+        <ul class="erfolge">
+          {team.erfolge.map((e) => (
+            <li>
+              <strong class="saison">{e.saison}</strong> {e.titel}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
     team.spieler.length > 0 && (
       <section>
         <h2>Kader</h2>
@@ -29,3 +44,18 @@ const { team } = Astro.props;
     )
   }
 </article>
+
+<style>
+  .erfolge {
+    list-style: none;
+    padding: 0;
+  }
+  .erfolge li {
+    padding-block: 0.25rem;
+  }
+  .saison {
+    display: inline-block;
+    min-width: 5.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+</style>

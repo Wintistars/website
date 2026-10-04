@@ -1,0 +1,100 @@
+---
+// Kompakte Zeile für die Startseite: kommendes Spiel oder Resultat.
+import { ausgang, gegner, type Spiel } from '../../lib/spielplan';
+import { formatSpieltag, formatUhrzeit } from '../../lib/zeit';
+
+interface Props {
+  spiel: Spiel;
+}
+
+const { spiel } = Astro.props;
+const { resultat, wir } = spiel;
+const ergebnis = ausgang(spiel);
+const KUERZEL = { sieg: 'S', niederlage: 'N', unentschieden: 'U' } as const;
+const LABEL = { sieg: 'Sieg', niederlage: 'Niederlage', unentschieden: 'Unentschieden' } as const;
+// Resultat aus unserer Sicht (unsere Tore zuerst)
+const score = resultat && (wir === 'gast' ? `${resultat.gast}:${resultat.heim}` : `${resultat.heim}:${resultat.gast}`);
+---
+
+<li class:list={['zeile', { 'ohne-badge': !ergebnis }]}>
+  {
+    ergebnis ? (
+      <span class:list={['badge', ergebnis]} title={LABEL[ergebnis]}>
+        <span aria-hidden="true">{KUERZEL[ergebnis]}</span>
+        <span class="visually-hidden">{LABEL[ergebnis]}</span>
+      </span>
+    ) : null
+  }
+  <div class="mitte">
+    <span class="gegner">
+      {wir === 'gast' && <span class="muted">@ </span>}
+      {gegner(spiel)}
+    </span>
+    <time datetime={spiel.beginn.toISOString()} class="muted">
+      {formatSpieltag(spiel.beginn)}{!resultat && `, ${formatUhrzeit(spiel.beginn)} Uhr`}
+      {spiel.hinweis && <strong class="hinweis"> · {spiel.hinweis}</strong>}
+    </time>
+  </div>
+  {score && <span class="score">{score}{spiel.zusatz && <small> {spiel.zusatz}</small>}</span>}
+</li>
+
+<style>
+  .zeile {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--c-border);
+  }
+  .ohne-badge {
+    grid-template-columns: 1fr auto;
+  }
+  .badge {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #fff;
+  }
+  .sieg {
+    background: #2f7d4f;
+  }
+  .niederlage {
+    background: #a8322d;
+  }
+  .unentschieden {
+    background: var(--c-muted);
+  }
+  .mitte {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+    min-width: 0;
+  }
+  .gegner {
+    font-weight: 600;
+  }
+  time {
+    font-size: 0.875rem;
+  }
+  .hinweis {
+    color: var(--c-text);
+  }
+  .score {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.6rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  small {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--c-muted);
+  }
+</style>

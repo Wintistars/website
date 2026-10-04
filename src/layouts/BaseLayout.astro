@@ -6,9 +6,11 @@ import SiteFooter from '../components/SiteFooter.astro';
 interface Props {
   title?: string;
   description?: string;
+  /** Inhalt ohne Container und Abstände, z. B. für die Startseite mit randlosen Abschnitten. */
+  fullWidth?: boolean;
 }
 
-const { title, description = 'EHC Wintistars – Eishockey in Winterthur' } = Astro.props;
+const { title, description = 'EHC Wintistars – Eishockey in Winterthur', fullWidth = false } = Astro.props;
 const fullTitle = title ? `${title} | EHC Wintistars` : 'EHC Wintistars';
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
@@ -20,13 +22,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#1c2232" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
   </head>
   <body>
     <SiteHeader />
-    <main class="container">
+    <main class:list={[fullWidth ? 'full' : 'container']}>
       <slot />
     </main>
     <SiteFooter />
@@ -43,5 +46,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     flex: 1;
     width: 100%;
     padding-block: 2rem 4rem;
+  }
+  main.full {
+    padding-block: 0;
   }
 </style>

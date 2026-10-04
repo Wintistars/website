@@ -6,8 +6,11 @@ const current = Astro.url.pathname;
 
 <header class="site-header">
   <div class="container inner">
-    <!-- TODO: Original-Logo als SVG einsetzen (public/logo.svg), sobald die Vektordatei vorliegt. -->
-    <a href="/" class="brand">EHC Wintistars</a>
+    <!-- TODO: Original-Logo als SVG einsetzen (public/logo.svg), sobald die Vektordatei vorliegt. Bis dahin Wortmarke. -->
+    <a href="/" class="brand" aria-label="EHC Wintistars – Startseite">
+      <span class="ehc">EHC</span>
+      <span class="name">Wintistars</span>
+    </a>
     <nav aria-label="Hauptnavigation">
       <ul>
         {
@@ -26,36 +29,80 @@ const current = Astro.url.pathname;
 
 <style>
   .site-header {
-    background: var(--c-primary);
-    color: var(--c-primary-contrast);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--c-navy);
+    color: var(--c-cream);
+    border-bottom: 3px solid var(--c-orange);
   }
   .inner {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem 2rem;
-    padding-block: 1rem;
+    gap: 0.25rem 2rem;
+    min-height: 4rem;
   }
   .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    font-family: var(--font-display);
     font-weight: 800;
-    font-size: 1.25rem;
+    font-style: italic;
+    text-transform: uppercase;
     text-decoration: none;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .ehc {
+    font-size: 1rem;
+    color: var(--c-sand);
+    letter-spacing: 0.08em;
+  }
+  .name {
+    font-size: 1.75rem;
     letter-spacing: 0.02em;
   }
   ul {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1.25rem;
+    gap: 0.25rem;
     list-style: none;
     margin: 0;
     padding: 0;
   }
   nav a {
-    text-decoration: none;
+    display: block;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-display);
     font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+  }
+  nav a:hover {
+    color: var(--c-sand);
   }
   nav a[aria-current='page'] {
-    color: var(--c-accent);
+    border-bottom-color: var(--c-orange);
+  }
+  @media (max-width: 48rem) {
+    .inner {
+      flex-direction: column;
+      align-items: stretch;
+      padding-top: 0.75rem;
+    }
+    nav {
+      overflow-x: auto;
+      margin-inline: calc(-1 * var(--gutter));
+      padding-inline: calc(var(--gutter) - 0.75rem);
+      scrollbar-width: none;
+    }
+    nav a {
+      font-size: 1rem;
+      padding-inline: 0.6rem;
+    }
   }
 </style>

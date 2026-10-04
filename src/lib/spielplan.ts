@@ -128,3 +128,18 @@ function vonSanity(s: SanitySpiel): Spiel {
     bemerkung: s.bemerkung,
   };
 }
+
+/** Sieg, Niederlage oder Unentschieden aus unserer Sicht; leer ohne Resultat oder wenn unklar ist, wer wir sind. */
+export function ausgang(spiel: Spiel): 'sieg' | 'niederlage' | 'unentschieden' | undefined {
+  const { resultat, wir } = spiel;
+  if (!resultat || !wir) return undefined;
+  const [unsere, ihre] = wir === 'heim' ? [resultat.heim, resultat.gast] : [resultat.gast, resultat.heim];
+  return unsere > ihre ? 'sieg' : unsere < ihre ? 'niederlage' : 'unentschieden';
+}
+
+/** Gegner aus unserer Sicht (falls unklar: «Heim – Gast»). */
+export function gegner(spiel: Spiel): string {
+  if (spiel.wir === 'heim') return spiel.gast;
+  if (spiel.wir === 'gast') return spiel.heim;
+  return `${spiel.heim} – ${spiel.gast}`;
+}

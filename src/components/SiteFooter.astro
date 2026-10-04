@@ -1,21 +1,72 @@
 ---
+import { NAVIGATION } from '../lib/navigation';
+import { GRUENDUNGSJAHR, VEREIN } from '../lib/verein';
+
 const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer">
-  <div class="container">
-    <p>© {year} EHC Wintistars, Winterthur</p>
+  <div class="trikotstreifen" aria-hidden="true"></div>
+  <div class="container inner">
+    <div>
+      <p class="name">{VEREIN}</p>
+      <p class="muted">Plauscheishockey aus Winterthur · seit {GRUENDUNGSJAHR}</p>
+    </div>
+    <nav aria-label="Fusszeile">
+      <ul>
+        {NAVIGATION.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+        <li><a href="/spielplan.ics">Kalender abonnieren</a></li>
+      </ul>
+    </nav>
   </div>
+  <div class="container copy">© {year} {VEREIN}, Winterthur</div>
 </footer>
 
 <style>
   .site-footer {
-    background: var(--c-surface);
-    border-top: 1px solid var(--c-border);
-    padding-block: 1.5rem;
-    font-size: 0.9rem;
+    background: var(--c-navy);
+    color: var(--c-cream);
+    font-size: 0.95rem;
+  }
+  .inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1.5rem 3rem;
+    padding-block: 2.5rem 1.5rem;
   }
   p {
     margin: 0;
+  }
+  .name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-style: italic;
+    font-size: 1.6rem;
+    text-transform: uppercase;
+  }
+  .muted {
+    color: var(--c-sand);
+  }
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  a {
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+    color: var(--c-sand);
+  }
+  .copy {
+    padding-block: 1rem 1.5rem;
+    border-top: 1px solid rgb(255 255 255 / 0.1);
+    font-size: 0.85rem;
+    color: #a3a8b4;
   }
 </style>
