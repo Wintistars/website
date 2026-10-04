@@ -138,7 +138,7 @@ const { nr, titel, id, logo, richtung } = Astro.props;
     position: absolute;
     inset: 0;
     background:
-      var(--eis-schnee, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='160' viewBox='0 0 420 160' preserveAspectRatio='none'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cg stroke='%2386939f'%3E%3Cpath stroke-opacity='.45' stroke-width='.7' d='M-10 34 C90 18 210 62 430 26'/%3E%3Cpath stroke-opacity='.3' stroke-width='.6' d='M-10 40 C100 26 220 68 430 33'/%3E%3Cpath stroke-opacity='.4' stroke-width='.6' d='M30 170 C90 110 170 60 330 -10'/%3E%3Cpath stroke-opacity='.28' stroke-width='.5' d='M70 170 C130 120 210 80 370 -10'/%3E%3Cpath stroke-opacity='.4' stroke-width='.7' d='M-10 118 C110 136 250 96 430 124'/%3E%3Cpath stroke-opacity='.25' stroke-width='.5' d='M-10 150 L430 92'/%3E%3Cpath stroke-opacity='.3' stroke-width='.6' d='M170 -10 C190 50 160 110 210 170'/%3E%3Cpath stroke-opacity='.28' stroke-width='.5' d='M300 -10 C280 60 340 110 310 170'/%3E%3Cpath stroke-opacity='.36' stroke-width='.6' d='M-10 80 C70 64 140 90 230 72 S360 48 430 70'/%3E%3C/g%3E%3Cg stroke='%23fff'%3E%3Cpath stroke-opacity='.9' stroke-width='.8' d='M-10 36 C90 20 210 64 430 28'/%3E%3Cpath stroke-opacity='.75' stroke-width='.7' d='M-10 120 C110 138 250 98 430 126'/%3E%3Cpath stroke-opacity='.7' stroke-width='.6' d='M32 170 C92 110 172 60 332 -10'/%3E%3Cpath stroke-opacity='.65' stroke-width='.6' d='M-10 82 C70 66 140 92 230 74 S360 50 430 72'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")) var(--eis-pos, 0 0) / var(--eis-kachel, 420px 160px),
+      var(--eis-schnee, none) var(--eis-pos, 0 0) / var(--eis-kachel, 420px 160px),
       radial-gradient(ellipse 70% 45% at 50% 0%, rgb(255 255 255 / 0.5), transparent 70%),
       radial-gradient(ellipse 70% 45% at 50% 100%, rgb(255 255 255 / 0.45), transparent 70%),
       rgb(236 240 243 / 0.36);
@@ -168,6 +168,13 @@ const { nr, titel, id, logo, richtung } = Astro.props;
   }
 
   /* Nur mit JS und Bewegung: Frost, Spur und Maschine einblenden */
+  /* Mattes Eis schon ab dem ersten Frame (is-js wird inline vor dem Rendern gesetzt), Maschine und Spur erst,
+     wenn das Skript ihre Position kennt (has-zb) – so ändert sich beim Laden nichts sichtbar */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.e.is-js) .band-frost {
+      display: block;
+    }
+  }
   :global(.e.has-zb) .band-frost,
   :global(.e.has-zb) .band-nass,
   :global(.e.has-zb) .band-zb {
