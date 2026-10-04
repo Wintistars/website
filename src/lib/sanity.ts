@@ -1,7 +1,7 @@
 // Zentraler Datenzugriff auf Sanity. Seiten holen Inhalte nur über diese Funktionen.
 // Das Dataset ist öffentlich: Der Build liest veröffentlichte Inhalte ohne Token.
 import { createClient } from '@sanity/client';
-import type { News, SanitySpiel, Seite, Spieler, SpielplanEinstellungen, Team } from './types';
+import type { Album, News, SanitySpiel, Seite, Spieler, SpielplanEinstellungen, Team, Verein } from './types';
 
 export const SANITY_PROJECT_ID = 'j2uq9efj';
 export const SANITY_DATASET = 'production';
@@ -22,7 +22,7 @@ export const client = createClient({
 const image = (field: string) => `${field}{..., "dimensions": asset->metadata.dimensions}`;
 const richText = (field: string) => `${field}[]{..., _type == "image" => {..., "dimensions": asset->metadata.dimensions}}`;
 
-const spielerFields = `_id, name, "slug": slug.current, nummer, position, jahrgang, ${image('portrait')}, ${richText('text')}`;
+const spielerFields = `_id, name, "slug": slug.current, nummer, position, funktion, jahrgang, ${image('portrait')}, ${richText('text')}`;
 
 export function getNews(limit?: number): Promise<News[]> {
   const range = limit ? `[0...${limit}]` : '';
@@ -62,6 +62,20 @@ export function getSpiele(): Promise<SanitySpiel[]> {
 /** Spielplan-Einstellungen (Singleton mit ID "spielplan"): SIHF-Link für die Meisterschaftsspiele. */
 export function getSpielplanEinstellungen(): Promise<SpielplanEinstellungen | null> {
   return client.fetch(`*[_id == "spielplan"][0] { sihfUrl }`);
+}
+
+/** Allgemeine Club-Angaben (Singleton mit ID "verein"): Eckdaten und Kontakt-E-Mail; null, solange nichts veröffentlicht ist. */
+export function getVerein(): Promise<Verein | null> {
+  return client.fetch(`*[_id == "verein"][0] { "fakten": coalesce(fakten[]{_key, titel, text}, []), kontaktEmail }`);
+}
+
+/** Galerie-Alben mit mindestens einem Foto, neuste zuerst (ohne Datum: nach Erfassungsdatum). */
+export function getAlben(): Promise<Album[]> {
+  return client.fetch(
+    `*[_type == "album" && count(bilder) > 0] | order(coalesce(datum, _createdAt) desc) {
+      _id, titel, datum, beschreibung, "bilder": bilder[]{..., "dimensions": asset->metadata.dimensions}
+    }`,
+  );
 }
 
 /** Alle allgemeinen Seiten ausser der Startseite. */

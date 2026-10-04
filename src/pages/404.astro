@@ -1,8 +1,17 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SektionKopf from '../components/SektionKopf.astro';
 ---
 
 <BaseLayout title="Seite nicht gefunden">
-  <h1>Seite nicht gefunden</h1>
-  <p><a href="/">Zur Startseite</a></p>
+  <div class="seite wrap">
+    <SektionKopf kicker="Abseits" titel="Seite nicht gefunden" id="titel-404" ebene={1}>
+      <p class="seite-lead">Diese Seite gibt es nicht (mehr). Vielleicht hilft einer dieser Links weiter.</p>
+    </SektionKopf>
+    <div class="ueber-cta">
+      <a class="knopf knopf-voll" href="/">Zur Startseite</a>
+      <a class="knopf" href="/spielplan/">Spielplan</a>
+      <a class="knopf" href="/team/">Team</a>
+    </div>
+  </div>
 </BaseLayout>

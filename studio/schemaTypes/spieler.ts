@@ -13,6 +13,7 @@ export const spieler = defineType({
       name: 'position',
       title: 'Position',
       type: 'string',
+      description: 'Leer lassen, wenn noch unbekannt.',
       options: {
         list: [
           { title: 'Torhüter', value: 'torhueter' },
@@ -22,13 +23,23 @@ export const spieler = defineType({
         layout: 'radio',
       },
     }),
+    defineField({
+      name: 'funktion',
+      title: 'Funktion im Team',
+      type: 'string',
+      description: 'Zum Beispiel Captain, Assistant Captain, Betreuer oder Kassier. Leer lassen, wenn keine.',
+    }),
     defineField({ name: 'jahrgang', title: 'Jahrgang', type: 'number', validation: (rule) => rule.integer().min(1940).max(2030) }),
     bildField('portrait', 'Porträt'),
     richTextField('text', 'Text'),
   ],
   orderings: [{ title: 'Name', name: 'nameAsc', by: [{ field: 'name', direction: 'asc' }] }],
   preview: {
-    select: { name: 'name', nummer: 'nummer', media: 'portrait' },
-    prepare: ({ name, nummer, media }) => ({ title: name, subtitle: nummer != null ? `#${nummer}` : undefined, media }),
+    select: { name: 'name', nummer: 'nummer', funktion: 'funktion', media: 'portrait' },
+    prepare: ({ name, nummer, funktion, media }) => {
+      // Untertitel z. B. «#12 · Captain»; fehlende Teile weglassen.
+      const teile = [nummer != null ? `#${nummer}` : undefined, funktion || undefined].filter(Boolean);
+      return { title: name, subtitle: teile.length ? teile.join(' · ') : undefined, media };
+    },
   },
 });

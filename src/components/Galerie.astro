@@ -1,0 +1,485 @@
+---
+// Galerie als ruhige Reihe solider Karten mit Lightbox. Auf der Startseite höchstens 4 Bilder in einer Reihe,
+// auf /galerie/ als Raster mit allen Bildern eines Albums.
+// Erwartet die Design-Tokens (--navy, --f-titel, --ease …) vom umgebenden `.d`.
+// Reveal über `data-rv`: das Script im BaseLayout beobachtet es und setzt `.is-in`.
+export interface Foto {
+  /** Bildlegende bzw. Alternativtext */
+  titel: string;
+  /** Grosse Version für die Lightbox */
+  url: string;
+  /** Version für die Karte und passendes srcset */
+  klein: string;
+  srcset?: string;
+  breite: number;
+  hoehe: number;
+}
+interface Props {
+  fotos: Foto[];
+  /** Höchstens so viele Bilder zeigen */
+  max?: number;
+  /** Alle Bilder als Raster statt als einzelne Reihe */
+  raster?: boolean;
+}
+const { fotos: alle, max = alle.length, raster = false } = Astro.props;
+const fotos = alle.slice(0, max);
+const n = fotos.length;
+---
+
+{
+  n > 0 && (
+    <div class="galerie" data-galerie>
+      <ul class="g-reihe" data-n={raster ? undefined : n} data-raster={raster ? '' : undefined} style={raster ? undefined : `--n:${n}`}>
+        {fotos.map((f, i) => (
+          <li class="g-zelle rv" data-rv style={`--d:${Math.min(i, 7) * 90}ms`}>
+            <figure class="g-karte">
+              <button type="button" class="g-knopf" data-lb-index={i} aria-label={`${f.titel} – Bild vergrössern`}>
+                <img
+                  src={f.klein}
+                  srcset={f.srcset}
+                  sizes={raster ? '(min-width: 701px) 25vw, 50vw' : `(min-width: 701px) ${Math.round(100 / n)}vw, 80vw`}
+                  alt={f.titel}
+                  width={f.breite}
+                  height={f.hoehe}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span class="g-lupe" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="16" height="16">
+                    <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5" />
+                  </svg>
+                </span>
+              </button>
+              <figcaption class="g-legende">{f.titel}</figcaption>
+            </figure>
+          </li>
+        ))}
+      </ul>
+
+      <dialog class="lb" data-lb aria-label="Bildansicht">
+        <figure class="lb-figur">
+          <img class="lb-bild" data-lb-bild alt="" />
+          <figcaption class="lb-legende">
+            <span data-lb-titel></span>
+            {n > 1 && <span class="lb-zaehler" data-lb-zaehler></span>}
+          </figcaption>
+        </figure>
+        <button type="button" class="lb-knopf lb-zu" data-lb-zu aria-label="Schliessen">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+        {n > 1 && (
+          <>
+            <button type="button" class="lb-knopf lb-zurueck" data-lb-schritt="-1" aria-label="Vorheriges Bild">
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7" />
+              </svg>
+            </button>
+            <button type="button" class="lb-knopf lb-weiter" data-lb-schritt="1" aria-label="Nächstes Bild">
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </>
+        )}
+      </dialog>
+      <script type="application/json" data-lb-daten set:html={JSON.stringify(fotos)} />
+    </div>
+  )
+}
+
+<script>
+  type Foto = { titel: string; url: string; breite: number; hoehe: number };
+
+  document.querySelectorAll<HTMLElement>('[data-galerie]').forEach((root) => {
+    const dlg = root.querySelector<HTMLDialogElement>('[data-lb]');
+    const bild = root.querySelector<HTMLImageElement>('[data-lb-bild]');
+    const titel = root.querySelector<HTMLElement>('[data-lb-titel]');
+    const zaehler = root.querySelector<HTMLElement>('[data-lb-zaehler]');
+    const fotos: Foto[] = JSON.parse(root.querySelector('[data-lb-daten]')?.textContent || '[]');
+    if (!dlg || !bild || !titel || fotos.length === 0) return;
+
+    let aktuell = 0;
+    let ausloeser: HTMLElement | null = null;
+
+    const zeige = (i: number) => {
+      aktuell = (i + fotos.length) % fotos.length;
+      const f = fotos[aktuell];
+      bild.classList.remove('ist-neu');
+      bild.src = f.url;
+      bild.width = f.breite;
+      bild.height = f.hoehe;
+      bild.alt = f.titel;
+      titel.textContent = f.titel;
+      if (zaehler) zaehler.textContent = `${aktuell + 1} / ${fotos.length}`;
+      void bild.offsetWidth;
+      bild.classList.add('ist-neu');
+      // Nachbarbilder vorladen
+      [aktuell + 1, aktuell - 1].forEach((j) => {
+        const n = fotos[(j + fotos.length) % fotos.length];
+        if (n) new Image().src = n.url;
+      });
+    };
+
+    root.querySelectorAll<HTMLButtonElement>('[data-lb-index]').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        ausloeser = btn;
+        zeige(Number(btn.dataset.lbIndex));
+        dlg.showModal();
+      }),
+    );
+    root.querySelectorAll<HTMLButtonElement>('[data-lb-schritt]').forEach((btn) =>
+      btn.addEventListener('click', () => zeige(aktuell + Number(btn.dataset.lbSchritt))),
+    );
+    root.querySelector('[data-lb-zu]')?.addEventListener('click', () => dlg.close());
+
+    // Klick auf den abgedunkelten Hintergrund schliesst
+    dlg.addEventListener('click', (e) => {
+      if (e.target === dlg) dlg.close();
+    });
+    dlg.addEventListener('keydown', (e) => {
+      if (fotos.length < 2) return;
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        zeige(aktuell + 1);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        zeige(aktuell - 1);
+      }
+    });
+    // Escape schliesst nativ; Fokus zurück auf die geöffnete Kachel
+    dlg.addEventListener('close', () => {
+      ausloeser?.focus({ preventScroll: true });
+      ausloeser = null;
+    });
+
+    // Wischen auf Touch-Geräten
+    let startX = 0;
+    let startY = 0;
+    dlg.addEventListener(
+      'touchstart',
+      (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      },
+      { passive: true },
+    );
+    dlg.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (fotos.length > 1 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) zeige(aktuell + (dx < 0 ? 1 : -1));
+    });
+  });
+</script>
+
+<style>
+  /* ============ Reihe ============ */
+  .g-reihe {
+    display: grid;
+    grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr));
+    gap: clamp(1rem, 2.4vw, 1.75rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .g-reihe[data-raster] {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  }
+  .g-zelle {
+    min-width: 0;
+  }
+
+  /* ============ Karte ============ */
+  .g-karte {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--papier, #fff);
+    border: 1px solid rgb(28 34 50 / 0.1);
+    border-top: 3px solid var(--orange, #b9612a);
+    border-radius: 14px;
+    box-shadow:
+      0 1px 2px rgb(28 34 50 / 0.05),
+      0 14px 30px -20px rgb(28 34 50 / 0.35);
+    transition:
+      translate 0.35s var(--ease),
+      box-shadow 0.35s var(--ease);
+  }
+  .g-karte:has(.g-knopf:hover) {
+    translate: 0 -3px;
+    box-shadow:
+      0 1px 2px rgb(28 34 50 / 0.06),
+      0 26px 44px -24px rgb(28 34 50 / 0.45);
+  }
+  .g-knopf {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: #eef0ee;
+    cursor: zoom-in;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+  }
+  .g-reihe[data-n='1'] .g-knopf {
+    aspect-ratio: 21 / 9;
+  }
+  .g-reihe[data-n='2'] .g-knopf {
+    aspect-ratio: 16 / 10;
+  }
+  .g-knopf:focus-visible {
+    outline: 3px solid var(--orange, #b9612a);
+    outline-offset: -3px;
+  }
+  .g-knopf img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+    transition: scale 0.6s var(--ease);
+  }
+  .g-knopf:hover img {
+    scale: 1.03;
+  }
+  .g-lupe {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgb(28 34 50 / 0.12);
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.92);
+    color: var(--navy, #1c2232);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .g-knopf:hover .g-lupe,
+  .g-knopf:focus-visible .g-lupe {
+    opacity: 1;
+  }
+  .g-legende {
+    padding: 0.75rem 1rem 0.85rem;
+    border-top: 1px solid var(--linie, rgb(28 34 50 / 0.13));
+    font: 750 1.2rem/1.05 var(--f-titel);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    color: var(--navy, #1c2232);
+    text-wrap: balance;
+  }
+
+  /* Tablet: höchstens zwei pro Zeile */
+  @media (max-width: 960px) and (min-width: 701px) {
+    .g-reihe:not([data-n='1'], [data-raster]) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .g-reihe[data-n='3'] .g-zelle:last-child {
+      grid-column: span 2;
+    }
+    .g-reihe[data-n='3'] .g-zelle:last-child .g-knopf {
+      aspect-ratio: 21 / 9;
+    }
+  }
+  /* Handy: wischbare Reihe wie bei den News */
+  @media (max-width: 700px) {
+    .g-reihe:not([data-n='1'], [data-raster]) {
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: 78%;
+      gap: 14px;
+      margin-inline: calc(-1 * clamp(16px, 4vw, 40px));
+      padding: 4px clamp(16px, 4vw, 40px) 22px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: clamp(16px, 4vw, 40px);
+      scrollbar-width: none;
+    }
+    .g-reihe::-webkit-scrollbar {
+      display: none;
+    }
+    .g-zelle {
+      scroll-snap-align: start;
+    }
+    .g-reihe[data-n='1'] .g-knopf {
+      aspect-ratio: 4 / 3;
+    }
+  }
+
+  /* ============ Lightbox ============ */
+  .lb {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: clamp(3.5rem, 6vw, 4.5rem) clamp(0.75rem, 6vw, 5.5rem) 1.25rem;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    overflow: hidden;
+  }
+  .lb[open] {
+    display: grid;
+    place-items: center;
+  }
+  .lb::backdrop {
+    background: rgb(20 25 38 / 0.94);
+  }
+  :global(html:has(.lb[open])) {
+    overflow: hidden;
+  }
+  .lb-figur {
+    display: grid;
+    justify-items: center;
+    max-width: 100%;
+    max-height: 100%;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    background: var(--papier, #fff);
+    border-radius: 14px;
+    box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.9);
+  }
+  .lb-bild {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100dvh - 10.5rem);
+    width: auto;
+    height: auto;
+    user-select: none;
+  }
+  .lb-legende {
+    display: flex;
+    gap: 1rem;
+    align-items: baseline;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.75rem 1rem 0.85rem;
+    border-top: 1px solid var(--linie, rgb(28 34 50 / 0.13));
+    color: var(--navy, #1c2232);
+    font: 750 1.35rem/1.05 var(--f-titel);
+    text-transform: uppercase;
+  }
+  .lb-zaehler {
+    flex: none;
+    font: 600 0.8rem/1 var(--f-text);
+    color: var(--ink-3, #6b7285);
+    font-variant-numeric: tabular-nums;
+  }
+  .lb-knopf {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid rgb(255 255 255 / 0.2);
+    border-radius: 10px;
+    background: rgb(255 255 255 / 0.08);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .lb-knopf:hover {
+    background: rgb(255 255 255 / 0.2);
+  }
+  .lb-knopf:focus-visible {
+    outline: 3px solid var(--orange, #b9612a);
+    outline-offset: 3px;
+  }
+  .lb-zu {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+  .lb-zurueck,
+  .lb-weiter {
+    top: 50%;
+    translate: 0 -50%;
+  }
+  .lb-zurueck {
+    left: clamp(0.5rem, 1.5vw, 1.25rem);
+  }
+  .lb-weiter {
+    right: clamp(0.5rem, 1.5vw, 1.25rem);
+  }
+  @media (max-width: 700px) {
+    .lb {
+      padding-bottom: 5rem;
+    }
+    .lb-zurueck,
+    .lb-weiter {
+      top: auto;
+      bottom: 1rem;
+      translate: none;
+    }
+    .lb-zurueck {
+      left: calc(50% - 56px);
+    }
+    .lb-weiter {
+      right: calc(50% - 56px);
+    }
+    .lb-bild {
+      max-height: calc(100dvh - 13rem);
+    }
+  }
+
+  /* ============ Bewegung ============ */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.d-js) .rv {
+      opacity: 0;
+      translate: 0 22px;
+      transition:
+        opacity 0.7s var(--ease),
+        translate 0.7s var(--ease);
+      transition-delay: var(--d, 0ms);
+    }
+    :global(.d-js) .rv:global(.is-in) {
+      opacity: 1;
+      translate: 0 0;
+    }
+    .lb[open] {
+      animation: lb-auf 0.28s var(--ease);
+    }
+    .lb[open]::backdrop {
+      animation: lb-hg 0.28s ease;
+    }
+    .lb-bild:global(.ist-neu) {
+      animation: lb-bild 0.3s ease;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .g-karte,
+    .g-knopf img {
+      transition: none;
+    }
+    .g-karte:has(.g-knopf:hover) {
+      translate: none;
+    }
+    .g-knopf:hover img {
+      scale: none;
+    }
+  }
+  @keyframes lb-auf {
+    from {
+      opacity: 0;
+      translate: 0 12px;
+    }
+  }
+  @keyframes lb-hg {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes lb-bild {
+    from {
+      opacity: 0.25;
+    }
+  }
+</style>

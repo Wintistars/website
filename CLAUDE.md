@@ -23,20 +23,31 @@ GitHub-Secrets: `SANITY_AUTH_TOKEN` (Studio-Deploy), `CLOUDFLARE_DEPLOY_HOOK` (t
 ## Struktur
 
 - `studio/schemaTypes/` – Content-Modell (Quelle der Wahrheit); `fields.ts` = gemeinsame Felder (Bild, Rich Text, Slug)
-- `src/lib/sanity.ts` – Sanity-Client und alle GROQ-Abfragen (`getNews`, `getTeam`, `getSpieler`, `getSeiten`, `getHome`, `getSpiele`, `getSpielplanEinstellungen`)
+- `src/lib/sanity.ts` – Sanity-Client und alle GROQ-Abfragen (`getNews`, `getTeam`, `getSpieler`, `getSeiten`, `getHome`, `getSpiele`, `getSpielplanEinstellungen`, `getVerein`, `getAlben`)
 - `src/lib/sihf.ts` + `src/lib/spielplan.ts` – Spielplan: SIHF-Export (Meisterschaft) + Sanity-Spiele; Zeiten immer über `src/lib/zeit.ts` (Europe/Zurich)
 - `src/lib/types.ts` – TS-Typen passend zu den GROQ-Projektionen
 - `src/lib/verein.ts` – fester Teamname `VEREIN` («EHC Wintistars») für Team-Seite, Spielplan, Kalender
 - `src/lib/image.ts` + `src/components/SanityPicture.astro` – Bilder über das Sanity-Bild-CDN
+- Design «Taktiktafel» (gewählter Entwurf B): `src/styles/site.css` (global: Tokens, Kopf, Fuss, alle Bausteine),
+  `src/layouts/BaseLayout.astro` (Kopf/Navigation, Fuss, Einblend-Script). Alles hängt am Wrapper `.d`;
+  `.d-js` am `<html>` = JavaScript aktiv.
+- `src/components/start/Hero.astro` – Hero: Spielzüge im Loop, Klick aufs Logo = Eis aufbereiten (Eismaschine)
+- `src/components/team/TeamBand.astro` – Team-Band mit Eismaschine im Hintergrund, Kadertafel und Spielerkarte
+  (Startseite und `/team/`); Gruppierung/Sortierung in `src/lib/kader.ts`
+- `src/components/spiele/` (Nächstes Spiel, Spieltabelle), `src/components/club/` (Erfolge, Eckdaten, Kontakt),
+  `Galerie.astro`, `NewsKarte.astro`, `SektionKopf.astro`, `Magnet.astro` (Logo), `Eismaschine.astro`
+- `src/lib/logo.ts` – Pfad zum Logo (noch Rasterbild-Platzhalter; beim Vektor-Logo nur hier ändern)
 - `src/components/richtext/` – Portable Text (Rich Text) inkl. Bildern
-- `src/components/content/` – Darstellung je Dokumenttyp
-- `src/pages/` – Routen: `/`, `/news/[slug]`, `/team`, `/spieler/[slug]`, `/spielplan`, `/spielplan.ics`, `/[...slug]` (Typ `seite`)
+- `functions/api/kontakt.ts` – Cloudflare Pages Function für das Kontaktformular (Versand über Resend)
+- `src/pages/` – Routen: `/`, `/news/`, `/news/[slug]`, `/team`, `/spieler/[slug]`, `/spielplan`, `/spielplan.ics`,
+  `/galerie`, `/[...slug]` (Typ `seite`; `club` und `kontakt` werden auch ohne Sanity-Seite erzeugt)
 
 ## Konventionen
 
-- Dokumenttypen: `news`, `spieler`, `team`, `spielplan`, `seite`, `spiel` (nur Plausch/Turnier; Meisterschaft kommt über `spielplan.sihfUrl`).
+- Dokumenttypen: `news`, `album` (Galerie), `spieler`, `team`, `spielplan`, `verein` (Club – Allgemein: Eckdaten, Kontakt-E-Mail), `seite`,
+  `spiel` (nur Plausch/Turnier; Meisterschaft kommt über `spielplan.sihfUrl`).
   Startseite = `seite` mit Slug `home`.
-- Der Club hat **ein** Team. `team` (Teaminfos & Kader) und `spielplan` (Einstellungen) sind Singletons mit fester
+- Der Club hat **ein** Team. `team` (Teaminfos & Kader), `spielplan` (Einstellungen) und `verein` sind Singletons mit fester
   `_id` = Typname: geöffnet über `studio/structure.ts`, abgesichert in `studio/sanity.config.ts` (`SINGLETONS`:
   keine Vorlage zum Neu-Erstellen, kein Löschen/Duplizieren). Abfragen per `*[_id == "team"][0]`; fehlt das Dokument,
   muss die Website trotzdem bauen.
@@ -48,8 +59,8 @@ GitHub-Secrets: `SANITY_AUTH_TOKEN` (Studio-Deploy), `CLOUDFLARE_DEPLOY_HOOK` (t
 
 - Editoren haben **keinen GitHub-Zugang**: Inhalte gehören nach Sanity, nicht ins Repo.
   Keine Bilder/Texte hart codieren, die sich ändern können. Studio-Texte für Nicht-Techniker formulieren.
-- Logo nur als originalgetreue Vektordatei verwenden, nie aus Fotos nachbauen.
-  Farben in `src/styles/global.css` sind Platzhalter, bis Logo/Trikotfarben definitiv sind.
+- Logo nur als originalgetreue Vektordatei verwenden, nie aus Fotos nachbauen (aktuell Platzhalter, `src/lib/logo.ts`).
+  Farben = Tokens auf `.d` in `src/styles/site.css` (Trikotfarben Navy/Orange/Sand/Crème).
 - Änderungen immer per Branch + Pull Request auf `main` (Branch-Protection ist noch nicht aktiv). Yves merged selbst.
 - UI-Texte auf Deutsch (de-CH, «ss» statt «ß»).
 

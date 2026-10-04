@@ -1,254 +1,135 @@
 ---
+// Startseite: Hero (Taktiktafel), Matchplan, News, Team, Club, Galerie, Kontakt.
+// Texte: Sanity-Seite «home» (Einleitung = Hero-Text, Inhalt = «Über uns»), Eckdaten aus «Club – Allgemein».
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/start/Hero.astro';
+import SektionKopf from '../components/SektionKopf.astro';
+import NaechstesSpiel from '../components/spiele/NaechstesSpiel.astro';
+import SpielTabelle from '../components/spiele/SpielTabelle.astro';
+import NewsKarte from '../components/NewsKarte.astro';
+import TeamBand from '../components/team/TeamBand.astro';
+import Erfolge from '../components/club/Erfolge.astro';
+import Fakten from '../components/club/Fakten.astro';
+import Kontakt from '../components/club/Kontakt.astro';
+import Galerie from '../components/Galerie.astro';
 import RichText from '../components/richtext/RichText.astro';
-import NewsCard from '../components/NewsCard.astro';
-import SanityPicture from '../components/SanityPicture.astro';
-import Hero from '../components/home/Hero.astro';
-import NaechstesSpiel from '../components/home/NaechstesSpiel.astro';
-import SpielKurz from '../components/home/SpielKurz.astro';
-import { getHome, getNews, getTeam } from '../lib/sanity';
+import { getAlben, getHome, getNews, getTeam, getVerein } from '../lib/sanity';
 import { getSpielplan } from '../lib/spielplan';
-import { IST_VORSCHAU } from '../lib/vorschau';
-import ImAufbau from '../components/ImAufbau.astro';
+import { ausgewaehlteFotos } from '../lib/galerie';
 
-const [home, news, team, spielplan] = await Promise.all([getHome(), getNews(3), getTeam(), getSpielplan()]);
+const [home, news, team, plan, verein, alben] = await Promise.all([
+  getHome(),
+  getNews(3),
+  getTeam(),
+  getSpielplan(),
+  getVerein(),
+  getAlben(),
+]);
 
-const kommend = spielplan.kommend.filter((s) => !s.hinweis);
-const [naechstes, ...danach] = kommend;
-const resultate = spielplan.resultate.filter((s) => s.resultat).slice(0, 5);
-const erfolge = team?.erfolge ?? [];
-const hatClubText = (home?.body?.length ?? 0) > 0;
-const kaderAnzahl = team?.spieler.length ?? 0;
+const kommend = plan.kommend.filter((s) => !s.hinweis);
+const naechstes = kommend[0];
+const weitere = kommend.slice(1, 6);
+const resultate = plan.resultate.filter((s) => s.resultat).slice(0, 4);
+const spieler = team?.spieler ?? [];
+const nummern = spieler.filter((s) => s.position !== 'torhueter').map((s) => s.nummer ?? 0);
+const fotos = ausgewaehlteFotos(alben, 4);
+const hatUeberUns = (home?.body?.length ?? 0) > 0;
+const fakten = verein?.fakten ?? [];
 ---
 
-{
-  IST_VORSCHAU ? (
-    <ImAufbau />
-  ) : (
-<BaseLayout fullWidth description={home?.einleitung}>
-  <Hero bild={home?.titelbild} einleitung={home?.einleitung} />
+<BaseLayout startseite description={home?.einleitung}>
+  <Hero einleitung={home?.einleitung} nummern={nummern} />
 
-  <section class="abschnitt spiele" aria-labelledby="spiele-titel">
-    <div class="container">
-      <span class="eyebrow">Saison</span>
-      <h2 id="spiele-titel">Spiele</h2>
-      <div class="spalten">
-        <div>
-          <h3>Nächstes Spiel</h3>
-          {naechstes ? <NaechstesSpiel spiel={naechstes} /> : <p class="muted">Der Spielplan folgt in Kürze.</p>}
-          {
-            danach.length > 0 && (
-              <ul class="liste">
-                {danach.slice(0, 3).map((s) => (
-                  <SpielKurz spiel={s} />
-                ))}
-              </ul>
-            )
-          }
-        </div>
-        <div>
-          <h3>Letzte Resultate</h3>
-          {
-            resultate.length > 0 ? (
-              <ul class="liste">
-                {resultate.map((s) => (
-                  <SpielKurz spiel={s} />
-                ))}
-              </ul>
-            ) : (
-              <p class="muted">Noch keine Resultate in dieser Saison.</p>
-            )
-          }
-        </div>
+  <!-- MATCHPLAN & SPIELE -->
+  <section class="sektion wrap" id="spiele" aria-labelledby="spiele-titel">
+    <SektionKopf kicker="Spielplan" titel="Matchplan" id="spiele-titel" mehr={{ href: '/spielplan/', label: 'Ganzer Spielplan' }} />
+
+    <div class="spiele-grid">
+      <NaechstesSpiel naechstes={naechstes} />
+
+      <div class="spielliste rv" data-rv style="--d:120ms">
+        <h3 class="h3">Weitere Spiele</h3>
+        {
+          weitere.length > 0 ? (
+            <SpielTabelle spiele={weitere} art="kommend" />
+          ) : (
+            <p class="leer-zeile">Keine weiteren Spiele angesetzt. Neue Termine erscheinen automatisch.</p>
+          )
+        }
+
+        <h3 class="h3 h3-res">Letzte Resultate</h3>
+        {
+          resultate.length > 0 ? (
+            <SpielTabelle spiele={resultate} art="resultate" kopf={false} />
+          ) : (
+            <div class="res-leer zeichne" data-rv>
+              <svg class="res-leer-icon" viewBox="0 0 48 48" aria-hidden="true">
+                <rect class="mk" pathLength="1" x="7" y="9" width="32" height="30" rx="3"></rect>
+                <path class="mk mk-zart" pathLength="1" d="M14 21h18M14 29h11"></path>
+              </svg>
+              <div>
+                <p class="res-leer-titel">Noch keine Resultate</p>
+                <p>Die Saison hat eben erst begonnen. Nach dem ersten Match steht hier das Ergebnis.</p>
+              </div>
+            </div>
+          )
+        }
       </div>
-      <p class="links">
-        <a href="/spielplan/" class="more">Ganzer Spielplan</a>
-        <a href="/spielplan.ics" class="more">Kalender abonnieren</a>
-      </p>
     </div>
   </section>
 
+  <!-- NEWS -->
   {
     news.length > 0 && (
-      <section class="abschnitt news" aria-labelledby="news-titel">
-        <div class="container">
-          <span class="eyebrow">Aktuell</span>
-          <h2 id="news-titel">News</h2>
-          <div class="grid">
-            {news.map((n) => (
-              <NewsCard news={n} />
-            ))}
-          </div>
-          <p class="links">
-            <a href="/news/" class="more">Alle News</a>
-          </p>
+      <section class="sektion wrap" id="news" aria-labelledby="news-titel">
+        <SektionKopf kicker="Aktuell" titel="News" id="news-titel" mehr={{ href: '/news/', label: 'Alle News' }} />
+        <div class="news-grid">
+          {news.map((n, i) => (
+            <NewsKarte news={n} verzoegerung={i * 110} />
+          ))}
         </div>
       </section>
     )
   }
 
-  {
-    (hatClubText || erfolge.length > 0) && (
-      <section class="abschnitt club" aria-labelledby="club-titel">
-        <div class="container spalten">
-          <div>
-            <span class="eyebrow">Der Club</span>
-            <h2 id="club-titel">Über uns</h2>
-            {hatClubText && (
-              <div class="prose">
-                <RichText value={home?.body} />
-              </div>
-            )}
-            <p class="links">
-              <a href="/club/" class="more">Mehr über den Club</a>
-            </p>
-          </div>
-          {erfolge.length > 0 && (
-            <div class="erfolge">
-              <h3>Erfolge</h3>
-              <ol>
-                {erfolge.map((e) => (
-                  <li>
-                    <span class="saison">{e.saison}</span>
-                    <span>{e.titel}</span>
-                  </li>
-                ))}
-              </ol>
+  <!-- TEAM: Kadertafel, im Hintergrund die Eismaschine -->
+  <TeamBand spieler={spieler} teamfoto={team?.teamfoto} mehr={{ href: '/team/', label: 'Zum ganzen Team' }} />
+
+  <!-- ÜBER UNS & ERFOLGE -->
+  <section class="sektion wrap" id="club" aria-labelledby="club-titel">
+    <SektionKopf kicker="Club" titel="Über uns" id="club-titel" mehr={{ href: '/club/', label: 'Mehr über den Club' }} />
+    <div class="club-grid">
+      <div class="ueber rv" data-rv>
+        {
+          hatUeberUns && (
+            <div class="ueber-lead">
+              <RichText value={home?.body} />
             </div>
-          )}
+          )
+        }
+        <Fakten fakten={fakten} />
+        <div class="ueber-cta">
+          <a class="knopf knopf-voll" href="/club/">Zum Club</a>
+          <a class="knopf" href="#kontakt">Kontakt</a>
         </div>
-      </section>
-    )
-  }
-
-  <section class:list={['team', { 'mit-foto': team?.teamfoto?.asset }]} aria-labelledby="team-titel">
-    {
-      team?.teamfoto?.asset && (
-        <SanityPicture image={team.teamfoto} widths={[800, 1200, 1600, 2400]} sizes="100vw" class="teamfoto" />
-      )
-    }
-    <div class="container team-inhalt">
-      <span class="eyebrow">Mannschaft</span>
-      <h2 id="team-titel">Das Team</h2>
-      {kaderAnzahl > 0 && <p>{kaderAnzahl} Spieler im Kader</p>}
-      <a href="/team/" class="more">Zum Kader</a>
+      </div>
+      <Erfolge erfolge={team?.erfolge ?? []} verzoegerung={120} />
     </div>
   </section>
+
+  <!-- GALERIE (kompakt) -->
+  {
+    fotos.length > 0 && (
+      <section class="sektion wrap" id="galerie" aria-labelledby="galerie-titel">
+        <SektionKopf kicker="Bilder" titel="Galerie" id="galerie-titel" mehr={{ href: '/galerie/', label: 'Zur Galerie' }} />
+        <Galerie fotos={fotos} max={4} />
+      </section>
+    )
+  }
+
+  <!-- KONTAKT -->
+  <section class="sektion wrap" id="kontakt" aria-labelledby="kontakt-titel">
+    <SektionKopf kicker="Mitspielen?" titel="Kontakt" id="kontakt-titel" />
+    <Kontakt verein={verein} />
+  </section>
 </BaseLayout>
-  )
-}
-
-<style>
-  .abschnitt {
-    padding-block: clamp(3rem, 7vw, 5rem);
-  }
-  h2 {
-    margin: 0 0 2rem;
-  }
-  h3 {
-    margin: 0 0 1rem;
-    font-size: 1.2rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--c-muted);
-  }
-  .spalten {
-    display: grid;
-    gap: 2.5rem 4rem;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-  }
-  .liste {
-    list-style: none;
-    margin: 0.5rem 0 0;
-    padding: 0;
-  }
-  .links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 2rem;
-    margin: 2rem 0 0;
-  }
-
-  .news {
-    background: var(--c-surface);
-  }
-
-  .club .prose :global(p:first-child) {
-    margin-top: 0;
-  }
-  .erfolge {
-    align-self: start;
-    padding: 1.75rem;
-    background: var(--c-navy);
-    color: var(--c-cream);
-    border-radius: var(--radius);
-    border-top: 6px solid var(--c-orange);
-  }
-  .erfolge h3 {
-    color: var(--c-sand);
-  }
-  .erfolge ol {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .erfolge li {
-    display: grid;
-    grid-template-columns: 5.5rem 1fr;
-    gap: 1rem;
-    align-items: baseline;
-    padding-block: 0.6rem;
-    border-top: 1px solid rgb(255 255 255 / 0.12);
-  }
-  .saison {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-style: italic;
-    font-size: 1.5rem;
-    color: var(--c-orange);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .team {
-    position: relative;
-    isolation: isolate;
-    display: grid;
-    align-items: end;
-    background: var(--c-navy);
-    color: var(--c-cream);
-    overflow: hidden;
-  }
-  .team :global(.teamfoto) {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: -2;
-  }
-  .mit-foto {
-    min-height: clamp(22rem, 45vw, 36rem);
-  }
-  .mit-foto::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: linear-gradient(to top, rgb(19 24 38 / 0.9), rgb(19 24 38 / 0.1) 70%);
-  }
-  .team-inhalt {
-    width: 100%;
-    padding-block: 3rem;
-  }
-  .team h2 {
-    margin-bottom: 0.75rem;
-  }
-  .team p {
-    margin: 0 0 1rem;
-    color: var(--c-sand);
-  }
-  .team .eyebrow,
-  .team .more {
-    color: var(--c-sand);
-  }
-</style>

@@ -30,7 +30,7 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 | Framework | Astro, Static Site Generation, TypeScript strict | Schnell, wenig JS. Ursprünglich Angular geplant; Angular-Komponenten wären als Astro-Islands möglich. |
 | CMS | **Sanity** (Free-Plan), Studio unter `studio/`, gehostet auf `wintistars.sanity.studio` | Gratis bis 20 Benutzer, Bild-CDN, Schema im Code. Storyblok verworfen (2026-10-03): Free nur 1 Benutzer, ab 5 Benutzern $99/Monat. |
 | Sanity-Projekt | Projekt-ID `j2uq9efj`, Dataset `production` (öffentlich), Organisation `ofwcx1pff` | Öffentliches Dataset: Build braucht keinen Token; Entwürfe bleiben privat. |
-| Content-Typen | `news`, `spieler`, `team`, `spielplan`, `seite`, `spiel` | Schema in `studio/schemaTypes/`. Startseite = `seite` mit Adresse `home`. Ein Team: `team` (Teaminfos & Kader) und `spielplan` (SIHF-Link) sind Singletons, Seite `/team/`. Struktur ist vorläufig und kann sich mit dem Design noch ändern. |
+| Content-Typen | `news`, `album`, `spieler`, `team`, `spielplan`, `verein`, `seite`, `spiel` | Schema in `studio/schemaTypes/`. Startseite = `seite` mit Adresse `home`. Ein Team: `team` (Teaminfos & Kader), `spielplan` (SIHF-Link) und `verein` (Club – Allgemein: Eckdaten, Kontakt-E-Mail) sind Singletons, Seite `/team/`. `album` = Galerie-Album (Fotos). Struktur ist vorläufig und kann sich mit dem Design noch ändern. |
 | Code | GitHub-Repo <https://github.com/Wintistars/website> (Organisation «Wintistars»), `main` geschützt, Pull Requests | |
 | Hosting | **Cloudflare Pages** (Free) – Build `npm run build`, Output `dist` | 500 Builds/Monat. Netlify Free verworfen (nur ca. 20 Deploys/Monat), Vercel Hobby verbietet kommerzielle Nutzung (Sponsoren). |
 | Rebuild | Sanity-Webhook (create/update/delete) → Deploy-Hook von Cloudflare Pages; zusätzlich GitHub Action `rebuild.yml` täglich 04:00 UTC und Mo 22:45 UTC | Inhalte gehen ohne Entwickler live; SIHF-Resultate kommen ohne Webhook. |
@@ -65,6 +65,7 @@ Werte stehen nie im Repo. Website-Build und `npm run dev` brauchen keine davon.
 | `SANITY_AUTH_TOKEN` (Token «Local Development») | Lokal in `.env` im Repo-Root (Vorlage `.env.example`, `.env` ist in `.gitignore`) | Alle Rollen | Lokale Skripte/CLI, z. B. Inhalte per Skript anlegen oder importieren: `set -a; source .env; set +a` |
 | `SANITY_AUTH_TOKEN` (Token «GitHub Actions – Studio deploy») | GitHub → Repo-Secrets (gesetzt 2026-10-03) | Nur «Deploy Studio» | `.github/workflows/studio-deploy.yml` |
 | `CLOUDFLARE_DEPLOY_HOOK` | GitHub → Repo-Secrets (gesetzt 2026-10-03) | Löst nur einen Build aus | `.github/workflows/rebuild.yml` (täglicher Spielplan-Rebuild) |
+| `RESEND_API_KEY`, `KONTAKT_AN`, `KONTAKT_VON` (noch offen) | Cloudflare → Pages → wintistars → Settings → Variables and Secrets | Senden über Resend | Kontaktformular (`functions/api/kontakt.ts`) |
 | Sanity-Webhook «Cloudflare Rebuild» | sanity.io/manage → API → Webhooks | – | Rebuild bei Veröffentlichung im Studio |
 
 Tokens verwalten/widerrufen: sanity.io/manage → Wintistars → API → Tokens. Den lokalen Token mit allen Rollen nie als
@@ -91,10 +92,19 @@ GitHub-Secret verwenden. Claude Code hat per Einstellung keinen Zugriff auf `.en
    - SIHF-Quelle: Studio → Spielplan → Einstellungen = `https://www.sihf.ch/de/game-center/team/109-2-710048`
      (Conte Hockey Cup A, Region Ostschweiz). Zu Saisonbeginn prüfen, ob Link/Liga noch stimmen.
 8. [x] Ein Team statt Teams (2026-10-03): Singletons `team` und `spielplan`, Seite `/team/`
-9. [ ] Inhalte erfassen: Seiten `home`, `club`, `kontakt`; erste News; Teaminfos & Kader, Spieler
-   (Plauschspiele von der alten Seite <https://www.wintistars.ch/spielplan> übernehmen)
+9. [ ] Inhalte erfassen
+   - [x] Spieler (29) und Kader importiert (2026-10-04, aus der Spielerliste; ohne die 6 Einträge mit unvollständigem
+     Namen: Kevin H, Markus, Curdin, Pascal, Dennis, Raffi). Ohne Nummer: Luca Pivetta, Alex Wibner, Robin Gisler,
+     Cristian Peralba, Brian Bollhalder; ohne Position (Gruppe «Weitere»): Robin Gisler, Cristian Peralba, Brian Bollhalder
+   - [x] Startseite (`home`: Einleitung, Über uns), Erfolge, «Club – Allgemein» (Eckdaten), Album «Archiv» (5 Fotos der alten Website)
+   - [ ] Seiten `club` und `kontakt` mit Text (Seiten erscheinen auch ohne), Kontakt-E-Mail, Teamfoto, Porträts, erste News
+   - [ ] Plauschspiele von der alten Seite <https://www.wintistars.ch/spielplan> übernehmen
 10. [ ] Editoren im Sanity-Projekt einladen
-11. [ ] Design: Logo (Vektor), Farben, Layout – danach Struktur ggf. anpassen
+11. [x] Design: Entwurf B «Taktiktafel» gewählt und umgesetzt (2026-10-04), Entwürfe A/C entfernt
+   - [ ] Logo als Vektordatei (aktuell Rasterbild-Platzhalter `public/logo-platzhalter.webp`)
+   - [ ] Kontaktformular einrichten: Resend-Konto, in Cloudflare Pages die Variablen `RESEND_API_KEY` (Secret),
+     `KONTAKT_AN` und optional `KONTAKT_VON` setzen (siehe `functions/api/kontakt.ts`). Bis dahin zeigt das Formular
+     bei Fehlern die Kontakt-E-Mail aus «Club – Allgemein» an.
 12. [ ] Domain wintistars.ch erst nach Fertigstellung umhängen (DNS-Zugriff vorher klären)
 
 ## Offene Punkte

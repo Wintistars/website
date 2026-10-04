@@ -6,7 +6,7 @@ import { schemaTypes } from './schemaTypes';
 import { structure } from './structure';
 
 // Dokumenttypen, von denen es genau ein Dokument gibt (ID = Typname, siehe structure.ts).
-const SINGLETONS = new Set(['team', 'spielplan']);
+const SINGLETONS = new Set(['team', 'spielplan', 'verein']);
 // Bei Singletons nur Veröffentlichen, Änderungen verwerfen und alte Version wiederherstellen erlauben.
 const SINGLETON_ACTIONS = new Set(['publish', 'discardChanges', 'restore']);
 

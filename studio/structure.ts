@@ -1,12 +1,15 @@
 import type { StructureResolver } from 'sanity/structure';
 
 // Navigation im Studio, in der Reihenfolge, wie Editoren sie brauchen.
-// "team" und "spielplan" sind Singletons: genau ein Dokument mit fester ID (siehe sanity.config.ts).
+// "team", "spielplan" und "verein" sind Singletons: genau ein Dokument mit fester ID (siehe sanity.config.ts).
 export const structure: StructureResolver = (S) =>
   S.list()
     .title('Inhalte')
     .items([
       S.documentTypeListItem('news').title('News'),
+      S.documentTypeListItem('album')
+        .title('Galerie')
+        .child(S.documentTypeList('album').title('Galerie').defaultOrdering([{ field: 'datum', direction: 'desc' }])),
       S.listItem()
         .title('Spielplan')
         .id('spielplan-ordner')
@@ -42,6 +45,10 @@ export const structure: StructureResolver = (S) =>
               S.documentTypeListItem('spieler').title('Spieler'),
             ]),
         ),
+      S.listItem()
+        .title('Club – Allgemein')
+        .id('verein')
+        .child(S.document().schemaType('verein').documentId('verein').title('Club – Allgemein')),
       S.divider(),
       S.documentTypeListItem('seite').title('Seiten'),
     ]);

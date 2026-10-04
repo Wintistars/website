@@ -1,0 +1,55 @@
+---
+// Erfolge des Clubs (Sanity: Teaminfos & Kader → Erfolge) als Blatt mit Meister-Zähler.
+import type { Erfolg } from '../../lib/types';
+
+interface Props {
+  erfolge: Erfolg[];
+  verzoegerung?: number;
+}
+const { erfolge, verzoegerung = 0 } = Astro.props;
+
+// «Meister … Liga A» zählt für die höchste Liga; massgebend ist die erste genannte Liga.
+const ersteLiga = (titel: string) => /\bliga\s+([a-z])\b/i.exec(titel)?.[1]?.toUpperCase();
+const meisterA = erfolge.filter((e) => /\bmeister/i.test(e.titel) && ersteLiga(e.titel) === 'A');
+---
+
+{
+  erfolge.length > 0 && (
+    <div class="erfolge blatt rv" data-rv style={`--d:${verzoegerung}ms`} aria-labelledby="erfolge-titel">
+      <h3 id="erfolge-titel" class="h3">
+        Erfolge
+      </h3>
+      {meisterA.length > 0 && (
+        <p class="meister">
+          <span class="meister-zahl">{meisterA.length}×</span>
+          <span class="meister-text">Meister Liga&nbsp;A</span>
+        </p>
+      )}
+      <ol class="erfolg-liste">
+        {erfolge.map((e) => {
+          const saison = e.saison && !/^[–-]$/.test(e.saison.trim()) ? e.saison : undefined;
+          const istMeister = /\bmeister/i.test(e.titel);
+          return (
+            <li class:list={{ 'ist-meister': istMeister }}>
+              <span class="erfolg-saison">{saison ?? '—'}</span>
+              <span class="erfolg-titel">
+                {e.titel}
+                {istMeister && (
+                  <span class="erfolg-badge">
+                    <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+                      <path
+                        fill="currentColor"
+                        d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3Zm0 4H6v1a2 2 0 0 0 1 1.7V7Zm10 0v2.7A2 2 0 0 0 18 8V7h-1Z"
+                      />
+                    </svg>
+                    Titel
+                  </span>
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  )
+}

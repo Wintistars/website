@@ -1,0 +1,43 @@
+---
+// News als Karte: Datum, Titel, Lead; das Titelbild nur, wenn eines erfasst ist (News sehen auch ohne Foto gut aus).
+import { imageUrl } from '../lib/image';
+import { formatDatum } from '../lib/format';
+import type { News } from '../lib/types';
+
+interface Props {
+  news: News;
+  /** Verzögerung der Einblendung in ms */
+  verzoegerung?: number;
+}
+const { news: n, verzoegerung = 0 } = Astro.props;
+const bild = n.bild?.asset ? n.bild : undefined;
+---
+
+<article class="karte rv" data-rv style={`--d:${verzoegerung}ms`}>
+  <a class:list={['karte-link', { 'ohne-bild': !bild }]} href={`/news/${n.slug}/`}>
+    {
+      bild && (
+        <div class="karte-bild">
+          <img
+            src={imageUrl(bild, 800, 500)}
+            srcset={`${imageUrl(bild, 600, 375)} 600w, ${imageUrl(bild, 1200, 750)} 1200w`}
+            sizes="(min-width: 961px) 33vw, (min-width: 701px) 50vw, 84vw"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            width="1200"
+            height="750"
+          />
+        </div>
+      )
+    }
+    <div class="karte-text">
+      <div class="karte-meta">
+        <time datetime={n.datum}>{formatDatum(n.datum)}</time>
+      </div>
+      <h3>{n.titel}</h3>
+      {n.lead && <p>{n.lead}</p>}
+      <span class="weiter" aria-hidden="true">Weiterlesen →</span>
+    </div>
+  </a>
+</article>

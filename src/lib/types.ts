@@ -32,6 +32,8 @@ export interface Spieler {
   slug: string;
   nummer?: number;
   position?: SpielerPosition;
+  /** Funktion im Team, z. B. «Captain» oder «Betreuer». */
+  funktion?: string;
   jahrgang?: number;
   portrait?: SanityImage;
   text?: RichText;
@@ -82,4 +84,26 @@ export interface SanitySpiel {
 export interface SpielplanEinstellungen {
   /** Link zur Teamseite im SIHF Game Center (Quelle für Meisterschaftsspiele). */
   sihfUrl?: string;
+}
+
+/** Eintrag in `verein.fakten` (Eckdaten zum Club). */
+export interface Fakt {
+  _key: string;
+  titel: string;
+  text: string;
+}
+
+/** Singleton `verein` (Club – Allgemein). */
+export interface Verein {
+  fakten: Fakt[];
+  kontaktEmail?: string;
+}
+
+/** Galerie-Album, Typ `album`. Nur Alben mit mindestens einem Foto. */
+export interface Album {
+  _id: string;
+  titel: string;
+  datum?: string; // YYYY-MM-DD
+  beschreibung?: string;
+  bilder: (SanityImage & { _key: string; legende?: string })[];
 }
