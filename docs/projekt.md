@@ -75,13 +75,15 @@ Siehe [README → Systeme und Konten](../README.md#systeme-und-konten) (einzige 
    - SIHF-Quelle: Studio → Spielplan → Einstellungen = `https://www.sihf.ch/de/game-center/team/109-2-710048`
      (Conte Hockey Cup A, Region Ostschweiz). Zu Saisonbeginn prüfen, ob Link/Liga noch stimmen.
 8. [x] Ein Team statt Teams (2026-10-03): Singletons `team` und `spielplan`, Seite `/team/`
-9. [ ] Inhalte erfassen
+9. [x] Inhalte erfassen (2026-10-05; Fotos folgen 2027)
    - [x] Spieler (29) und Kader importiert (2026-10-04, aus der Spielerliste; ohne die 6 Einträge mit unvollständigem
      Namen: Kevin H, Markus, Curdin, Pascal, Dennis, Raffi). Ohne Nummer: Luca Pivetta, Alex Wibner, Robin Gisler,
      Cristian Peralba, Brian Bollhalder; ohne Position (Gruppe «Weitere»): Robin Gisler, Cristian Peralba, Brian Bollhalder
    - [x] Startseite (`home`: Einleitung, Über uns), Erfolge, «Club – Allgemein» (Eckdaten), Album «Archiv» (5 Fotos der alten Website)
-   - [ ] Seiten `club` und `kontakt` mit Text (Seiten erscheinen auch ohne), Kontakt-E-Mail, Teamfoto, Porträts, erste News
-   - [ ] Plauschspiele von der alten Seite <https://www.wintistars.ch/spielplan> übernehmen
+   - [x] Erste News (2), Kontakt-E-Mail `info@wintistars.ch` in «Club – Allgemein» (Postfach siehe Punkt 12)
+   - [x] Plauschspiele (16) und Abschlussturnier der Saison 2026/27 von <https://www.wintistars.ch/spielplan> übernommen
+   - Seiten `club` und `kontakt` entfallen: seit dem Design «Taktiktafel» Abschnitte der Startseite (`#club`, `#kontakt`)
+   - [ ] Teamfoto und Spielerporträts (erst 2027, bis dahin Platzhalter)
 10. [ ] Editoren im Sanity-Projekt einladen
 11. [x] Design: Entwurf B «Taktiktafel» gewählt und umgesetzt (2026-10-04), Entwürfe A/C entfernt
    - [ ] Logo als Vektordatei (aktuell Rasterbild-Platzhalter `public/logo-platzhalter.webp`)
