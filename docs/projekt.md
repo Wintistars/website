@@ -38,6 +38,9 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 | Spielplan | Meisterschaft automatisch aus dem CSV-Export des SIHF Game Centers (beim Build, `src/lib/sihf.ts`), Plausch-/Turnierspiele als Sanity-Typ `spiel`; täglicher Rebuild per GitHub Action | Kein Abtippen. Export ist nicht offiziell dokumentiert: Fällt er aus, fehlen nur die Meisterschaftsspiele (Warnung im Build-Log). Zusätzlich Kalender-Abo `/spielplan.ics`. |
 | Bilder | Sanity-Bild-CDN (`src/lib/image.ts`, `SanityPicture`) | Keine Bilder im Repo; Grössen/Formate on the fly, Hotspot-Zuschnitt. |
 | Firebase | Bewusst **nicht** gewählt | Kein Bedarf an Login oder Echtzeitdaten. |
+| E-Mail / Postfach | **Google Workspace for Nonprofits** (gratis), gemeinsame Inbox `info@wintistars.ch` (ersetzt das Wix-Postfach) | Antworten kommen von der Club-Adresse, Verlauf bleibt beim Club. Club-Konto `info@` wird später auch Login für Sanity, Cloudflare, GitHub. Kontaktformular sendet per Google Apps Script → kein Resend nötig. Entschieden 2026-10-05. |
+| Wix | Wird **gekündigt**, sobald die neue Website live ist (heute ca. 200 CHF/Jahr) | Wix als CMS verworfen (2026-10-05): kostet weiter, spart keinen Dienst. Mail «bei Wix» wäre kostenpflichtiges Google Workspace. |
+| Domain | `.ch` zu einem Schweizer Registrar (z. B. Infomaniak, Hostpoint, ca. 15–20 CHF/Jahr), DNS bei Cloudflare (gratis) | Cloudflare Registrar unterstützt `.ch` nicht. |
 
 ### Bekannte Kompromisse
 
@@ -54,7 +57,8 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 | GitHub | Organisation `Wintistars`, Repo `website` | Zweiten Owner (z. B. Vorstand) hinzufügen; altes `SirSiLves/wintistars` archivieren/löschen |
 | Sanity | Organisation `ofwcx1pff` von Yves | Zweiten Admin einladen |
 | Cloudflare | Persönliches Konto Yves, Pages-Projekt `wintistars` | Später Club-Konto oder zweites Mitglied |
-| Domain wintistars.ch | Inhaber unklar | Sollte auf den Club laufen; vor dem Umhängen klären |
+| Domain wintistars.ch | Bei Wix (DNS `ns12/ns13.wixdns.net`), Zugriff über Wix-Konto «ehcwintistars» (Yves hat Zugriff) | Beim Wix-Ausstieg zu Schweizer Registrar auf den Club transferieren |
+| Google Workspace | Noch nicht beantragt | Über Google for Nonprofits (Prüfung via Goodstack: Statuten, Vorstand) |
 
 ### Tokens / Secrets
 
@@ -65,7 +69,7 @@ Werte stehen nie im Repo. Website-Build und `npm run dev` brauchen keine davon.
 | `SANITY_AUTH_TOKEN` (Token «Local Development») | Lokal in `.env` im Repo-Root (Vorlage `.env.example`, `.env` ist in `.gitignore`) | Alle Rollen | Lokale Skripte/CLI, z. B. Inhalte per Skript anlegen oder importieren: `set -a; source .env; set +a` |
 | `SANITY_AUTH_TOKEN` (Token «GitHub Actions – Studio deploy») | GitHub → Repo-Secrets (gesetzt 2026-10-03) | Nur «Deploy Studio» | `.github/workflows/studio-deploy.yml` |
 | `CLOUDFLARE_DEPLOY_HOOK` | GitHub → Repo-Secrets (gesetzt 2026-10-03) | Löst nur einen Build aus | `.github/workflows/rebuild.yml` (täglicher Spielplan-Rebuild) |
-| `RESEND_API_KEY`, `KONTAKT_AN`, `KONTAKT_VON` (noch offen) | Cloudflare → Pages → wintistars → Settings → Variables and Secrets | Senden über Resend | Kontaktformular (`functions/api/kontakt.ts`) |
+| `RESEND_API_KEY`, `KONTAKT_AN`, `KONTAKT_VON` (entfällt mit Umstellung auf Google Apps Script) | Cloudflare → Pages → wintistars → Settings → Variables and Secrets | Senden über Resend | Kontaktformular (`functions/api/kontakt.ts`) |
 | Sanity-Webhook «Cloudflare Rebuild» | sanity.io/manage → API → Webhooks | – | Rebuild bei Veröffentlichung im Studio |
 
 Tokens verwalten/widerrufen: sanity.io/manage → Wintistars → API → Tokens. Den lokalen Token mit allen Rollen nie als
@@ -102,10 +106,19 @@ GitHub-Secret verwenden. Claude Code hat per Einstellung keinen Zugriff auf `.en
 10. [ ] Editoren im Sanity-Projekt einladen
 11. [x] Design: Entwurf B «Taktiktafel» gewählt und umgesetzt (2026-10-04), Entwürfe A/C entfernt
    - [ ] Logo als Vektordatei (aktuell Rasterbild-Platzhalter `public/logo-platzhalter.webp`)
-   - [ ] Kontaktformular einrichten: Resend-Konto, in Cloudflare Pages die Variablen `RESEND_API_KEY` (Secret),
-     `KONTAKT_AN` und optional `KONTAKT_VON` setzen (siehe `functions/api/kontakt.ts`). Bis dahin zeigt das Formular
-     bei Fehlern die Kontakt-E-Mail aus «Club – Allgemein» an.
-12. [ ] Domain wintistars.ch erst nach Fertigstellung umhängen (DNS-Zugriff vorher klären)
+   - [ ] Kontaktformular auf Google Apps Script umstellen (statt Resend, siehe E-Mail-Entscheid). Bis dahin zeigt das
+     Formular bei Fehlern die Kontakt-E-Mail aus «Club – Allgemein» an.
+12. [ ] E-Mail `info@wintistars.ch` (Entscheid 2026-10-05)
+   - [ ] Google for Nonprofits beantragen (Yves/Vorstand, mit neutralem Google-Konto; Statuten bereithalten)
+   - [ ] Workspace aktivieren, Domain per TXT-Eintrag im Wix-DNS bestätigen, MX-Einträge setzen
+     (Stand 2026-10-05: keine MX-Einträge vorhanden → es geht keine bestehende Mail verloren)
+   - [ ] `info@` als gemeinsame Inbox (Delegation oder Google Group «Collaborative Inbox»), Editoren hinzufügen
+   - [ ] Laufende Unterhaltungen aus dem Wix-Postfach sichern
+   - [ ] Logins von Sanity, Cloudflare, GitHub auf `info@wintistars.ch` umstellen
+13. [ ] Go-live und Wix-Ausstieg
+   - [ ] Domain zu Schweizer Registrar transferieren, DNS zu Cloudflare, Website auf Cloudflare Pages umhängen
+     (Google-MX-Einträge beim Umzug mitnehmen!)
+   - [ ] Wix kündigen
 
 ## Offene Punkte
 
@@ -114,4 +127,3 @@ GitHub-Secret verwenden. Claude Code hat per Einstellung keinen Zugriff auf `.en
 - SIHF-Export ist nicht offiziell dokumentiert; bei Formatänderung `src/lib/sihf.ts` anpassen (Build-Log zeigt `[sihf]`-Warnung).
 - Logo als Vektordatei beschaffen (Original), danach Farben/Design-Tokens in `src/styles/global.css` festlegen.
 - Live-Vorschau von Entwürfen (Sanity Presentation/Visual Editing): braucht eine SSR-Vorschau-Umgebung. Noch nicht eingerichtet.
-- DNS-Zugriff für wintistars.ch klären.
