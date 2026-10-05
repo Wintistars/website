@@ -1,6 +1,7 @@
 ---
 // Meisterschaftsspiele kommen beim Build von Swiss Ice Hockey, Plauschspiele aus Sanity (src/lib/spielplan.ts).
 // Damit neue Resultate erscheinen, baut eine GitHub Action die Seite regelmässig neu (.github/workflows/rebuild.yml).
+// Kommende Spiele und Resultate teilen sich eine Liste mit Umschalter (Reiter). Ohne JavaScript stehen beide untereinander.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SektionKopf from '../components/SektionKopf.astro';
 import NaechstesSpiel from '../components/spiele/NaechstesSpiel.astro';
@@ -21,48 +22,165 @@ const weitere = kommend.filter((s) => s !== naechstes);
 
     <div class="spiele-grid">
       <NaechstesSpiel naechstes={naechstes} />
-      <div class="spielliste rv" data-rv style="--d:120ms">
-        <h2 class="h3">Weitere Spiele</h2>
-        {
-          weitere.length > 0 ? (
-            <SpielTabelle spiele={weitere} art="kommend" details />
-          ) : (
-            <p class="leer-zeile">Keine weiteren Spiele angesetzt. Neue Termine erscheinen automatisch.</p>
-          )
-        }
+      <div class="spielliste rv" data-rv style="--d:120ms" data-reiter>
+        <div class="reiter" role="tablist" aria-label="Spiele">
+          <button class="reiter-knopf" type="button" role="tab" id="reiter-kommend" aria-controls="liste-kommend" aria-selected="true">
+            Kommende Spiele <span class="reiter-zahl">{weitere.length}</span>
+          </button>
+          <button class="reiter-knopf" type="button" role="tab" id="reiter-resultate" aria-controls="resultate" aria-selected="false" tabindex="-1">
+            Resultate <span class="reiter-zahl">{resultate.length}</span>
+          </button>
+        </div>
+
+        <section class="reiter-feld" id="liste-kommend" role="tabpanel" aria-labelledby="reiter-kommend">
+          <h2 class="h3 reiter-titel">Kommende Spiele</h2>
+          {
+            weitere.length > 0 ? (
+              <SpielTabelle spiele={weitere} art="kommend" details />
+            ) : (
+              <p class="leer-zeile">Keine weiteren Spiele angesetzt. Neue Termine erscheinen automatisch.</p>
+            )
+          }
+        </section>
+
+        <section class="reiter-feld" id="resultate" role="tabpanel" aria-labelledby="reiter-resultate">
+          <h2 class="h3 reiter-titel">Resultate</h2>
+          {
+            resultate.length > 0 ? (
+              <SpielTabelle spiele={resultate} art="resultate" details kopf />
+            ) : (
+              <p class="leer-zeile">Noch keine Resultate. Nach dem ersten Match steht hier das Ergebnis.</p>
+            )
+          }
+        </section>
+
+        <div class="quelle">
+          <p>
+            Meisterschaftsspiele und Resultate: <a href="https://www.sihf.ch/de/game-center/" rel="noopener">Swiss Ice Hockey</a>.
+            Stand {formatSpieltag(stand)}, {formatUhrzeit(stand)} Uhr.
+          </p>
+          <a class="knopf knopf-orange" href="/spielplan.ics">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path fill="currentColor" d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2Zm12 8H5v9h14v-9Z"></path>
+            </svg>
+            Kalender abonnieren
+          </a>
+        </div>
       </div>
     </div>
   </div>
-
-  <section class="sektion wrap" aria-labelledby="resultate-titel">
-    <SektionKopf kicker="Saison" titel="Resultate" id="resultate-titel" />
-    {
-      resultate.length > 0 ? (
-        <div class="blatt res-blatt">
-          <SpielTabelle spiele={resultate} art="resultate" details />
-        </div>
-      ) : (
-        <p class="blatt leer-blatt">Noch keine Resultate. Nach dem ersten Match steht hier das Ergebnis.</p>
-      )
-    }
-    <div class="quelle">
-      <p>
-        Meisterschaftsspiele und Resultate: <a href="https://www.sihf.ch/de/game-center/" rel="noopener">Swiss Ice Hockey</a>.
-        Stand {formatSpieltag(stand)}, {formatUhrzeit(stand)} Uhr.
-      </p>
-      <a class="knopf knopf-orange" href="/spielplan.ics">
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path fill="currentColor" d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2Zm12 8H5v9h14v-9Z"></path>
-        </svg>
-        Kalender abonnieren
-      </a>
-    </div>
-  </section>
 </BaseLayout>
 
+<script>
+  // Reiter «Kommende Spiele» / «Resultate». Ohne JavaScript bleiben beide Listen sichtbar.
+  // /spielplan/#resultate öffnet direkt die Resultate.
+  const box = document.querySelector<HTMLElement>('[data-reiter]');
+  if (box) {
+    const knoepfe = [...box.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const zeige = (aktiv: HTMLButtonElement, fokus = false) => {
+      for (const k of knoepfe) {
+        const an = k === aktiv;
+        k.setAttribute('aria-selected', String(an));
+        k.tabIndex = an ? 0 : -1;
+        const feld = document.getElementById(k.getAttribute('aria-controls') ?? '');
+        if (feld) feld.hidden = !an;
+      }
+      if (fokus) aktiv.focus();
+    };
+    knoepfe.forEach((k, i) => {
+      k.addEventListener('click', () => {
+        zeige(k);
+        history.replaceState(null, '', i === 1 ? '#resultate' : location.pathname + location.search);
+      });
+      k.addEventListener('keydown', (e) => {
+        const schritt = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!schritt) return;
+        e.preventDefault();
+        knoepfe[(i + schritt + knoepfe.length) % knoepfe.length]?.click();
+        knoepfe[(i + schritt + knoepfe.length) % knoepfe.length]?.focus();
+      });
+    });
+    const start = location.hash === '#resultate' ? knoepfe[1] : knoepfe[0];
+    if (start) zeige(start);
+    box.classList.add('reiter-an');
+  }
+</script>
+
 <style>
-  .res-blatt {
-    padding: clamp(0.5rem, 2vw, 1.2rem) clamp(1rem, 3vw, 2rem);
+  /* Umschalter nur mit JavaScript; sonst Zwischentitel über beiden Listen */
+  .reiter {
+    display: none;
+  }
+  .reiter-an .reiter {
+    display: flex;
+    gap: clamp(1.2rem, 3vw, 2rem);
+    margin-bottom: 0.9rem;
+  }
+  .reiter-an .reiter-titel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .reiter-titel {
+    margin-bottom: 0.7rem;
+  }
+  .reiter-feld + .reiter-feld {
+    margin-top: 2.2rem;
+  }
+  .reiter-an .reiter-feld + .reiter-feld {
+    margin-top: 0;
+  }
+  .reiter-knopf {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.2rem 0 0.35rem;
+    border: 0;
+    background: none;
+    font: 750 1.45rem/1 var(--f-titel);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--ink-3);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 7px;
+    transition:
+      color 0.2s,
+      text-decoration-color 0.2s;
+  }
+  .reiter-knopf:hover {
+    color: var(--ink);
+  }
+  .reiter-knopf[aria-selected='true'] {
+    color: var(--ink);
+    text-decoration-color: var(--orange);
+  }
+  .reiter-knopf:focus-visible {
+    outline: 2px solid var(--blau);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+  .reiter-zahl {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding-inline: 0.4rem;
+    border-radius: 999px;
+    background: var(--linie);
+    font: 650 0.75rem/1 var(--f-text);
+    letter-spacing: 0;
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+  .reiter-knopf[aria-selected='true'] .reiter-zahl {
+    background: var(--navy);
+    color: #fff;
   }
   .quelle {
     display: flex;
@@ -73,6 +191,9 @@ const weitere = kommend.filter((s) => s !== naechstes);
     margin-top: 2rem;
     font-size: 0.9rem;
     color: var(--ink-3);
+  }
+  .quelle p {
+    flex: 1 1 16rem;
   }
   .quelle a:not(.knopf) {
     color: inherit;
