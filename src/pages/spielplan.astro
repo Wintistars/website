@@ -25,10 +25,10 @@ const weitere = kommend.filter((s) => s !== naechstes);
       <div class="spielliste rv" data-rv style="--d:120ms" data-reiter>
         <div class="reiter" role="tablist" aria-label="Spiele">
           <button class="reiter-knopf" type="button" role="tab" id="reiter-kommend" aria-controls="liste-kommend" aria-selected="true">
-            Kommende Spiele <span class="reiter-zahl">{weitere.length}</span>
+            <span class="reiter-text">Kommende Spiele</span> <span class="reiter-zahl">{weitere.length}</span>
           </button>
           <button class="reiter-knopf" type="button" role="tab" id="reiter-resultate" aria-controls="resultate" aria-selected="false" tabindex="-1">
-            Resultate <span class="reiter-zahl">{resultate.length}</span>
+            <span class="reiter-text">Resultate</span> <span class="reiter-zahl">{resultate.length}</span>
           </button>
         </div>
 
@@ -145,19 +145,23 @@ const weitere = kommend.filter((s) => s !== naechstes);
     letter-spacing: 0.02em;
     color: var(--ink-3);
     cursor: pointer;
+    transition: color 0.2s;
+  }
+  /* Unterstrich nur unter dem Wort, nicht unter der Zahl */
+  .reiter-text {
     text-decoration: underline;
     text-decoration-color: transparent;
     text-decoration-thickness: 3px;
     text-underline-offset: 7px;
-    transition:
-      color 0.2s,
-      text-decoration-color 0.2s;
+    transition: text-decoration-color 0.2s;
   }
   .reiter-knopf:hover {
     color: var(--ink);
   }
   .reiter-knopf[aria-selected='true'] {
     color: var(--ink);
+  }
+  .reiter-knopf[aria-selected='true'] .reiter-text {
     text-decoration-color: var(--orange);
   }
   .reiter-knopf:focus-visible {
@@ -168,15 +172,15 @@ const weitere = kommend.filter((s) => s !== naechstes);
   .reiter-zahl {
     display: inline-grid;
     place-items: center;
-    min-width: 1.5rem;
-    height: 1.5rem;
-    padding-inline: 0.4rem;
+    /* gleich gross für ein- und zweistellige Zahlen */
+    min-width: 1.75rem;
+    height: 1.75rem;
+    padding-inline: 0.3rem;
     border-radius: 999px;
     background: var(--linie);
     font: 650 0.75rem/1 var(--f-text);
     letter-spacing: 0;
     color: var(--ink-2);
-    text-decoration: none;
   }
   .reiter-knopf[aria-selected='true'] .reiter-zahl {
     background: var(--navy);
