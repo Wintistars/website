@@ -48,32 +48,11 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
   auch Mitglieder verwalten und Daten löschen). Falls das zum Problem wird: Growth-Plan ($15/Benutzer/Monat)
   mit Rolle «Editor», oder Non-Profit-Plan bei Sanity anfragen.
 - Das Projekt startete im 30-tägigen Growth-Trial (bis ca. 2026-11-02); danach Free-Plan prüfen.
-- Cloudflare-Konto ist aktuell das persönliche Konto von Yves; langfristig Club-E-Mail-Konto oder zweites Mitglied.
+- Cloudflare- und Sanity-Konto sind aktuell persönliche Konten von Yves; Umstellung auf `info@wintistars.ch` geplant.
 
-### Eigentum / Zugänge (Empfehlung)
+### Konten, Zugänge, Tokens
 
-| Dienst | Stand | Empfehlung |
-| --- | --- | --- |
-| GitHub | Organisation `Wintistars`, Repo `website` | Zweiten Owner (z. B. Vorstand) hinzufügen; altes `SirSiLves/wintistars` archivieren/löschen |
-| Sanity | Organisation `ofwcx1pff` von Yves | Zweiten Admin einladen |
-| Cloudflare | Persönliches Konto Yves, Pages-Projekt `wintistars` | Später Club-Konto oder zweites Mitglied |
-| Domain wintistars.ch | Bei Wix (DNS `ns12/ns13.wixdns.net`), Zugriff über Wix-Konto «ehcwintistars» (Yves hat Zugriff) | Beim Wix-Ausstieg zu Schweizer Registrar auf den Club transferieren |
-| Google Workspace | Noch nicht beantragt | Über Google for Nonprofits (Prüfung via Goodstack: Statuten, Vorstand) |
-
-### Tokens / Secrets
-
-Werte stehen nie im Repo. Website-Build und `npm run dev` brauchen keine davon.
-
-| Name | Wo gespeichert | Rechte | Wofür |
-| --- | --- | --- | --- |
-| `SANITY_AUTH_TOKEN` (Token «Local Development») | Lokal in `.env` im Repo-Root (Vorlage `.env.example`, `.env` ist in `.gitignore`) | Alle Rollen | Lokale Skripte/CLI, z. B. Inhalte per Skript anlegen oder importieren: `set -a; source .env; set +a` |
-| `SANITY_AUTH_TOKEN` (Token «GitHub Actions – Studio deploy») | GitHub → Repo-Secrets (gesetzt 2026-10-03) | Nur «Deploy Studio» | `.github/workflows/studio-deploy.yml` |
-| `CLOUDFLARE_DEPLOY_HOOK` | GitHub → Repo-Secrets (gesetzt 2026-10-03) | Löst nur einen Build aus | `.github/workflows/rebuild.yml` (täglicher Spielplan-Rebuild) |
-| `RESEND_API_KEY`, `KONTAKT_AN`, `KONTAKT_VON` (entfällt mit Umstellung auf Google Apps Script) | Cloudflare → Pages → wintistars → Settings → Variables and Secrets | Senden über Resend | Kontaktformular (`functions/api/kontakt.ts`) |
-| Sanity-Webhook «Cloudflare Rebuild» | sanity.io/manage → API → Webhooks | – | Rebuild bei Veröffentlichung im Studio |
-
-Tokens verwalten/widerrufen: sanity.io/manage → Wintistars → API → Tokens. Den lokalen Token mit allen Rollen nie als
-GitHub-Secret verwenden. Claude Code hat per Einstellung keinen Zugriff auf `.env`.
+Siehe [README → Systeme und Konten](../README.md#systeme-und-konten) (einzige Quelle; dort nachführen).
 
 ## Vorgehen / Status
 
