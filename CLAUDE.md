@@ -66,6 +66,8 @@ GitHub-Secrets: `SANITY_AUTH_TOKEN` (Studio-Deploy), `CLOUDFLARE_DEPLOY_HOOK` (t
   Farben = Tokens auf `.d` in `src/styles/site.css` (Trikotfarben Navy/Orange/Sand/Crème).
 - Änderungen immer per Branch + Pull Request auf `main` (Branch-Protection ist noch nicht aktiv). Yves merged selbst.
 - UI-Texte auf Deutsch (de-CH, «ss» statt «ß»).
+- Aufbau, Systeme, Konten (welches Login besitzt was), Tokens/Hooks: einzige Quelle ist `README.md` → «Systeme und Konten».
+  Bei jeder Änderung an Diensten/Konten/Secrets im selben PR nachführen. Nie Passwörter oder Secret-Werte eintragen.
 
 ## Betrieb & Deployment
 
