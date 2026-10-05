@@ -49,7 +49,7 @@ const fakten = verein?.fakten ?? [];
       <NaechstesSpiel naechstes={naechstes} />
 
       <div class="spielliste rv" data-rv style="--d:120ms">
-        <h3 class="h3">Weitere Spiele</h3>
+        <h3 class="h3">Kommende Spiele</h3>
         {
           weitere.length > 0 ? (
             <SpielTabelle spiele={weitere} art="kommend" />
@@ -58,7 +58,16 @@ const fakten = verein?.fakten ?? [];
           )
         }
 
-        <h3 class="h3 h3-res">Letzte Resultate</h3>
+        <div class="liste-kopf h3-res">
+          <h3 class="h3">Letzte Resultate</h3>
+          {
+            resultate.length > 0 && (
+              <a class="mehr mehr-klein" href="/spielplan/#resultate">
+                Alle Resultate <span aria-hidden="true">→</span>
+              </a>
+            )
+          }
+        </div>
         {
           resultate.length > 0 ? (
             <SpielTabelle spiele={resultate} art="resultate" kopf={false} />
