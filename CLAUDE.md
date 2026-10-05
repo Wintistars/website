@@ -1,7 +1,7 @@
 # EHC Wintistars – Club-Website
 
 Neue Website für den Eishockeyclub EHC Wintistars (Winterthur), ersetzt www.wintistars.ch.
-Astro (SSG, TypeScript strict) + Sanity (Headless CMS) + Cloudflare Pages. Kommunikation mit Yves auf Deutsch.
+Astro (SSG, TypeScript strict) + Sanity (Headless CMS) + Cloudflare Pages. Kommunikation mit Yves auf Englisch (Website-Texte bleiben Deutsch, de-CH).
 
 Projektbrief, Entscheide, Status und offene Punkte: @docs/projekt.md
 Allgemeine Astro-Hinweise: @AGENTS.md
