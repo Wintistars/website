@@ -104,12 +104,20 @@ Siehe [README → Systeme und Konten](../README.md#systeme-und-konten) (einzige 
    - [ ] POP3/IMAP aktivieren für alle, die das Postfach lesen
    - [x] Kontakt-E-Mail in Studio → «Club – Allgemein» auf `ehcwintistars@gmx.ch` gesetzt (2026-11-03)
      (`info@wintistars.ch` hat noch keine MX-Einträge, Mail dorthin kommt nicht an)
-   - [ ] Nach dem DNS-Umzug: Cloudflare Email Routing `info@wintistars.ch` → `ehcwintistars@gmx.ch`, dann Kontakt-E-Mail
-     wieder auf `info@` umstellen
-   - [ ] Logins von Sanity, Cloudflare, GitHub auf `ehcwintistars@gmx.ch` umstellen
+   - [x] Zone `wintistars.ch` in Cloudflare angelegt (2026-11-03, Free, Status «pending»). Wix-Einträge übernommen
+     (3 × A `185.230.63.x`, CNAME `www` → `cdn3.wixdns.net`, `m` → `www86.wixdns.net`), alle «DNS only», damit die
+     alte Wix-Website unverändert weiterläuft
+   - [x] Email Routing: Ziel `ehcwintistars@gmx.ch` bestätigt, Regel `info@wintistars.ch` → `ehcwintistars@gmx.ch` aktiv
+   - [ ] Nameserver beim Registrar (Swizzonic AG; heute `ns12/ns13.wixdns.net`, verwaltet über Wix) ersetzen durch
+     `igor.ns.cloudflare.com` und `penny.ns.cloudflare.com`; DNSSEC vorher ausschalten
+   - [ ] Sobald die Zone aktiv ist: Cloudflare → Email Routing → Settings → «Add missing records» (MX, SPF, DKIM),
+     Test-Mail an `info@` schicken, dann Kontakt-E-Mail in «Club – Allgemein» auf `info@wintistars.ch` umstellen
+   - [ ] Logins von Sanity, Cloudflare (heute `register@ruosch.me`), GitHub auf `ehcwintistars@gmx.ch` umstellen –
+     erst wenn das GMX-Konto abgesichert ist (sonst kann der bisherige Inhaber via Passwort-Reset alles übernehmen).
+     Wo möglich zuerst als zweites Admin-Konto einladen statt Login-Adresse ändern
 13. [ ] Go-live und Wix-Ausstieg
-   - [ ] Domain zu Schweizer Registrar transferieren, DNS zu Cloudflare, Website auf Cloudflare Pages umhängen
-     (danach Email Routing für `info@` einrichten, siehe Punkt 12)
+   - [ ] Domain zu Schweizer Registrar transferieren, Website auf Cloudflare Pages umhängen (DNS ist dann schon bei
+     Cloudflare, siehe Punkt 12)
    - [ ] Wix kündigen
 
 ## Offene Punkte
