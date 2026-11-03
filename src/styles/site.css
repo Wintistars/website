@@ -2465,9 +2465,10 @@ a.kt-spieler:hover .kt-nachname {
 }
 .fuss-motiv {
   position: absolute;
-  right: -90px;
+  left: 50%;
   top: 0;
   width: 600px;
+  margin-left: -300px;
   height: 100%;
   fill: none;
   stroke: rgb(255 255 255 / 0.07);
@@ -2475,11 +2476,11 @@ a.kt-spieler:hover .kt-nachname {
   pointer-events: none;
 }
 .fm-rot {
-  stroke: rgb(212 46 39 / 0.22);
+  stroke: rgb(212 46 39 / 0.16);
   stroke-width: 7;
 }
 .fm-blau {
-  stroke: rgb(47 98 191 / 0.3);
+  stroke: rgb(47 98 191 / 0.2);
   stroke-width: 7;
 }
 .fm-punkt {
@@ -2653,8 +2654,8 @@ a.kt-spieler:hover .kt-nachname {
     grid-template-columns: minmax(0, 1fr);
   }
   .fuss-motiv {
-    right: -160px;
     width: 440px;
+    margin-left: -220px;
     opacity: 0.6;
   }
 }
