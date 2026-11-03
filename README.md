@@ -31,12 +31,12 @@ Dienst gekündigt) diese Tabelle im selben Pull Request nachführen.
 | **Cloudflare Pages** | Website hosten, Build, Kontaktformular-Function | <https://dash.cloudflare.com> → Workers & Pages → `wintistars` | Account `fd52f99b603613c078b3bbcf2afb2586`, Login `register@ruosch.me` (Yves, persönlich) | Yves | 0 | ✅ |
 | **Sanity** | CMS: Inhalte, Bilder, Studio | <https://www.sanity.io/manage> → Projekt `j2uq9efj` (Organisation `ofwcx1pff`) | Login `register@ruosch.me` (Yves, persönlich) | Yves | 0 (Free; Growth-Trial bis ca. 2026-11-02) | ✅ |
 | **Wix** | Alte Website, Domain `wintistars.ch` inkl. DNS, altes Postfach | <https://manage.wix.com> → Website «ehcwintistars» | Login: _zu ergänzen_ | Yves hat Zugriff, weitere: _zu ergänzen_ | ca. 200 CHF/Jahr | Wird nach dem Go-live gekündigt |
-| **Google Workspace for Nonprofits** | E-Mail `info@wintistars.ch` (gemeinsame Inbox), Kontaktformular-Versand | <https://admin.google.com> | Antrag mit neutralem Google-Konto (_zu ergänzen_), danach `info@wintistars.ch` | _zu ergänzen_ | 0 | Geplant, Statuten werden besorgt |
-| **Domain-Registrar** (nach Wix) | `wintistars.ch` | _zu ergänzen_ (z. B. Infomaniak, Hostpoint) | Club-Konto `info@wintistars.ch` | – | ca. 15–20 CHF/Jahr | Geplant |
+| **GMX** | Club-Postfach `ehcwintistars@gmx.ch` (Ziel für `info@wintistars.ch` und das Kontaktformular) | <https://www.gmx.ch> → Mein Account | Konto `ehcwintistars@gmx.ch`, Wiederherstellung heute über private Adresse von Michael Holzer | Michael Holzer, Yves | 0 (FreeMail) | ✅ in Gebrauch, Konto absichern (siehe projekt.md Punkt 12) |
+| **Domain-Registrar** (nach Wix) | `wintistars.ch` | _zu ergänzen_ (z. B. Infomaniak, Hostpoint) | Club-Konto `ehcwintistars@gmx.ch` | – | ca. 15–20 CHF/Jahr | Geplant |
 | **Swiss Ice Hockey** | Spielplan Meisterschaft (öffentlicher CSV-Export) | Link in Studio → Spielplan → Einstellungen | Kein Konto nötig | – | 0 | ✅ |
 
-**Ziel:** Alle Konten laufen auf das Club-Konto `info@wintistars.ch` (Login per «Mit Google anmelden»), und jedes System
-hat mindestens **zwei Admins** (Yves + jemand vom Vorstand). Sobald `info@` existiert, die Logins von Sanity, Cloudflare
+**Ziel:** Alle Konten laufen auf das Club-Konto `ehcwintistars@gmx.ch`, und jedes System
+hat mindestens **zwei Admins** (Yves + jemand vom Vorstand). Sobald das GMX-Konto abgesichert ist, die Logins von Sanity, Cloudflare
 und GitHub umstellen und die Tabelle nachführen.
 
 **Passwörter** gehören nicht ins Repo. Ablage: _noch offen_ – Empfehlung: Passwortmanager mit gemeinsamem Club-Tresor
@@ -54,7 +54,7 @@ Werte stehen nie im Repo. Website-Build und `npm run dev` brauchen keine davon.
 | Deploy-Hook `sanity-publish` | Cloudflare → Pages → `wintistars` → Settings → Builds | Löst nur einen Build aus | Ziel des Sanity-Webhooks |
 | Sanity-Webhook «Cloudflare Rebuild» | sanity.io/manage → Projekt → API → Webhooks | – | Rebuild bei Veröffentlichung im Studio |
 | GitHub-App «Cloudflare Workers and Pages» | GitHub → Organisation `Wintistars` → Settings → GitHub Apps | Nur Repo `website` | Cloudflare liest den Code |
-| `RESEND_API_KEY`, `KONTAKT_AN`, `KONTAKT_VON` | Cloudflare → Pages → `wintistars` → Settings → Variables and Secrets | Senden über Resend | Kontaktformular – nicht gesetzt, entfällt mit Umstellung auf Google Apps Script |
+| `RESEND_API_KEY`, `KONTAKT_AN`, `KONTAKT_VON` | Cloudflare → Pages → `wintistars` → Settings → Variables and Secrets | Senden über Resend | Kontaktformular – nicht gesetzt; nach dem DNS-Umzug setzen, `KONTAKT_AN` = `ehcwintistars@gmx.ch` |
 
 Tokens verwalten/widerrufen: sanity.io/manage → Projekt → API → Tokens. Den lokalen Token mit allen Rollen nie als
 GitHub-Secret verwenden. Die Hook-URLs sind geheim (wer sie kennt, kann Builds auslösen).
