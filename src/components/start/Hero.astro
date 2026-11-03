@@ -69,11 +69,12 @@ interface HeroZug {
 // Echtes IIHF-Feld in Metern (60 × 30, Mitte = 0/0), im SVG in Dezimetern (×10).
 // Sichtbar ist die rechte Angriffszone (x von −2 bis 30 m): Mittellinie am Rand, blaue Linie, Bullykreise, Tor.
 // Alle Züge gehen aufs rechte Tor (Torlinie x = 26 m) und enden mit einem Schuss ins Netz.
+// Magnete = eigene Feldspieler, X = Gegner; die Spielstärken wechseln (5:5, 4:4, Über- und Unterzahl).
 const ZUEGE_BREIT: HeroZug[] = [
   {
-    titel: 'Aufbau über die blaue Linie',
-    pos: [[12.8, -10], [12.8, 9.5], [22.5, 7], [20, -3.5]],
-    x: [[16, -5.5], [17.5, 4.5], [23.2, 3.4], [21, -9.5]],
+    titel: '5 gegen 5 · Aufbau über die blaue Linie',
+    pos: [[12.8, -10], [12.8, 9.5], [22.5, 7], [20, -3.5], [24.5, -8.5]],
+    x: [[16, -5.5], [17.5, 4.5], [23.2, 3.4], [21, -9.5], [24.8, 4.8]],
     schritte: [
       { art: 'pass', spieler: 0, nach: 1, c: [15.6, 0] },
       { art: 'pass', spieler: 1, nach: 2, c: [17.5, 11] },
@@ -82,7 +83,7 @@ const ZUEGE_BREIT: HeroZug[] = [
     ],
   },
   {
-    titel: 'Durch die Mitte',
+    titel: '4 gegen 4 · Durch die Mitte',
     pos: [[12.8, 3], [14, -10.5], [21, -8], [21.5, 6.5]],
     x: [[16.5, 6], [18.5, -4.5], [23.2, 2.4], [13.8, -5.5]],
     schritte: [
@@ -93,14 +94,34 @@ const ZUEGE_BREIT: HeroZug[] = [
     ],
   },
   {
-    titel: 'Aus der Ecke in den Slot',
+    titel: 'Überzahl 5 gegen 4 · Pass in den Slot',
+    pos: [[12.8, 0], [17.5, -10], [17.5, 10], [20.5, 1], [24.3, 4.2]],
+    x: [[16, -4.5], [16, 4.5], [21.5, -4], [21.5, 5.2]],
+    schritte: [
+      { art: 'pass', spieler: 0, nach: 1, c: [14, -6.5] },
+      { art: 'pass', spieler: 1, nach: 3, c: [19, -3.6] },
+      { art: 'schuss', spieler: 3, ziel: [25.7, -0.3], c: [23.2, 0.9] },
+    ],
+  },
+  {
+    titel: 'Überzahl 4 gegen 3 · Aus der Ecke in den Slot',
     pos: [[13, -9], [23.8, -11.2], [19, 2.2], [14, 9]],
-    x: [[20.5, -7.6], [17, -1.8], [23, 4.6], [16.5, 6.5]],
+    x: [[20.5, -7.6], [17, -1.8], [23, 4.6]],
     schritte: [
       { art: 'pass', spieler: 0, nach: 1, c: [18, -12.8] },
       { art: 'lauf', spieler: 1, ziel: [27.4, -5.5], c: [27.2, -10] },
       { art: 'pass', spieler: 1, nach: 2, c: [24.2, -0.8] },
       { art: 'schuss', spieler: 2, ziel: [25.7, 0.2], c: [22.6, 1.6] },
+    ],
+  },
+  {
+    titel: 'Unterzahl 3 gegen 5 · Konter',
+    pos: [[12.8, -3], [14.5, 8], [21.5, -10.5]],
+    x: [[16.5, 1.5], [18, 7], [21.5, -5.2], [23, 2.6], [15, -9.5]],
+    schritte: [
+      { art: 'lauf', spieler: 0, ziel: [18, -6.5], c: [15, -6] },
+      { art: 'pass', spieler: 0, nach: 2, c: [20.5, -7.4] },
+      { art: 'schuss', spieler: 2, ziel: [25.7, -0.6], c: [24.6, -6] },
     ],
   },
 ];
@@ -174,9 +195,14 @@ const linienVonZug = (z: HeroZug, f = 1): HeroLinie[] => {
 };
 // Rückennummern aus dem Kader (Feldspieler mit Nummer); ohne Kader neutrale Platzhalter-Nummern
 const feldNummern = nummern.filter((n) => n > 0).sort((a, b) => a - b);
-const HERO_NR = [feldNummern[0] ?? 4, feldNummern[3] ?? 12, feldNummern[6] ?? 22, feldNummern[8] ?? 27];
+const HERO_NR = [feldNummern[0] ?? 4, feldNummern[3] ?? 12, feldNummern[6] ?? 22, feldNummern[8] ?? 27, feldNummern[10] ?? 33];
 /** Pool für die Zufallsauswahl im Hero (pro Spielzug neu gemischt, damit niemand bevorzugt wird) */
-const HERO_POOL = feldNummern.length >= 4 ? feldNummern : [4, 12, 22, 27];
+const HERO_POOL = feldNummern.length >= 5 ? feldNummern : [4, 12, 22, 27, 33];
+/** So viele Magnete braucht ein Satz (grösste Spielstärke); überzählige sind im jeweiligen Zug ausgeblendet */
+const magnete = (zuege: HeroZug[]) => {
+  const n = Math.max(...zuege.map((z) => z.pos.length));
+  return Array.from({ length: n }, (_, k) => dm(zuege[0].pos[k] ?? zuege[0].pos[0]));
+};
 
 // ---------- Eis aufbereiten (Klick aufs Logo) ----------
 /** Benutztes Eis (Textur mit Kufenspuren) */
@@ -306,7 +332,7 @@ const HF_PUNKTE: P[] = [
               </g>
             ))}
             <g class="spieler-ebene">
-              {set.zuege[0].pos.map(dm).map(([x, y], k) => (
+              {magnete(set.zuege).map(([x, y], k) => (
                 <g class="sp" transform={`translate(${x} ${y})`}>
                   <g class="sp-hub">
                     <circle class="sp-schatten" cx="0.7" cy="1.8" r="9" />
@@ -819,16 +845,22 @@ const HF_PUNKTE: P[] = [
       }
     };
 
-    /** Wechsel: Linien und X blenden aus, die Magnete gleiten an die Startplätze des nächsten Zugs */
+    /** Wechsel: Linien und X blenden aus, die Magnete gleiten an die Startplätze des nächsten Zugs.
+        Ändert sich die Spielstärke, kommen Magnete am Zielplatz dazu oder blenden ganz aus. */
     const wechsel = async (s: Satz, alt: SVGGElement, neu: SVGGElement) => {
       notiz.classList.remove('zeigen');
       feld.classList.remove('titel-an');
-      const start = s.lage.map((p) => [...p]);
+      const vorher = s.posVon(alt).length;
       const ziel = s.posVon(neu);
       // Magnete kurz abblenden und neue Nummern ziehen
-      await Promise.all(s.sp.map((e) => blende(e, 260, 1, 0.15)));
+      await Promise.all(s.sp.slice(0, vorher).map((e) => blende(e, 260, 1, 0.15)));
       mische(s.sp);
-      s.sp.forEach((e) => blende(e, 320, 0.15, 1));
+      ziel.forEach((q, i) => i >= vorher && s.setze(i, q[0], q[1]));
+      const start = s.lage.map((p) => [...p]);
+      s.sp.forEach((e, i) => {
+        if (i < ziel.length) blende(e, 320, i < vorher ? 0.15 : 0, 1);
+        else if (i < vorher) blende(e, 320, 0.15, 0);
+      });
       await Promise.all([
         blende(alt, 550, 1, 0),
         warte(200).then(() =>
@@ -863,7 +895,8 @@ const HF_PUNKTE: P[] = [
         const s = satz(setName());
         vorbereiten(s);
         mische(s.sp);
-        s.sp.forEach((e, i) =>
+        const n = s.posVon(s.zuege[0]).length;
+        s.sp.slice(0, n).forEach((e, i) =>
           warte(i * 140).then(() =>
             tween(
               460,
@@ -875,7 +908,7 @@ const HF_PUNKTE: P[] = [
             ),
           ),
         );
-        await warte(s.sp.length * 140 + 700);
+        await warte(n * 140 + 700);
         // Satz abspielen, bis die Fensterbreite einen anderen verlangt
         for (let i = 0; setName() === s.name; i = (i + 1) % s.zuege.length) {
           await spiele(s, s.zuege[i]);
