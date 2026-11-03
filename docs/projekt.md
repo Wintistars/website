@@ -108,8 +108,11 @@ Siehe [README → Systeme und Konten](../README.md#systeme-und-konten) (einzige 
      (3 × A `185.230.63.x`, CNAME `www` → `cdn3.wixdns.net`, `m` → `www86.wixdns.net`), alle «DNS only», damit die
      alte Wix-Website unverändert weiterläuft
    - [x] Email Routing: Ziel `ehcwintistars@gmx.ch` bestätigt, Regel `info@wintistars.ch` → `ehcwintistars@gmx.ch` aktiv
-   - [ ] Nameserver beim Registrar (Swizzonic AG; heute `ns12/ns13.wixdns.net`, verwaltet über Wix) ersetzen durch
-     `igor.ns.cloudflare.com` und `penny.ns.cloudflare.com`; DNSSEC vorher ausschalten
+   - [ ] Nameserver bei Swizzonic AG (ehemals switchplus, <https://controlpanel.swizzonic.ch>) ersetzen: heute
+     `ns12/ns13.wixdns.net`, neu `igor.ns.cloudflare.com` und `penny.ns.cloudflare.com` (DNSSEC ist aus). In Wix geht
+     das nicht – Wix führt die Domain als «von Drittanbieter verwaltet, über DNS verbunden».
+     **Blockiert (2026-11-03):** Swizzonic-Login unbekannt; Passwort muss zurückgesetzt werden, vorher klären, wem die
+     Login-E-Mail gehört (Swizzonic-Mail von 2019 ging an `ehcwintistars@gmx.ch`)
    - [ ] Sobald die Zone aktiv ist: Cloudflare → Email Routing → Settings → «Add missing records» (MX, SPF, DKIM),
      Test-Mail an `info@` schicken, dann Kontakt-E-Mail in «Club – Allgemein» auf `info@wintistars.ch` umstellen
    - [ ] Logins von Sanity, Cloudflare (heute `register@ruosch.me`), GitHub auf `ehcwintistars@gmx.ch` umstellen –
