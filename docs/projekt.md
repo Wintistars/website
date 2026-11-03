@@ -96,10 +96,13 @@ Siehe [README → Systeme und Konten](../README.md#systeme-und-konten) (einzige 
    - Stand 2026-11-03 (geprüft im Postfach): 103 Mails mit Ordnern, Wix-Kontaktformular liefert hierhin; Kontoinhaber und
      Absendername Michael Holzer, Wiederherstellung nur über seine private Hotmail-Adresse, keine Mobilnummer,
      Zwei-Faktor aus, Passwort von 2017, POP3/IMAP aus, keine Weiterleitungen oder Filterregeln
-   - [ ] Mit Michael klären: Konto gehört dem Club; Wiederherstellungs-Adresse/-Nummer auf Club-Kontrolle umstellen
+   - [ ] Konto vom Personen- auf ein Club-Konto umstellen: Michael spielt nicht mehr im Club. Kontoinhaber-Daten
+     (Name, Geburtsdatum, Adresse) und Wiederherstellungs-Adresse gehören noch ihm → mit Michael klären und auf eine
+     verantwortliche Person im Vorstand bzw. club-kontrollierte Adresse/Nummer umstellen
    - [ ] Neues Passwort setzen, im Club-Passwortmanager ablegen (siehe README)
-   - [ ] Absendername auf «EHC Wintistars» ändern; POP3/IMAP aktivieren für alle, die das Postfach lesen
-   - [ ] Sofort: Kontakt-E-Mail in Studio → «Club – Allgemein» auf `ehcwintistars@gmx.ch` setzen
+   - [x] Absendername auf «EHC Wintistars» geändert (2026-11-03)
+   - [ ] POP3/IMAP aktivieren für alle, die das Postfach lesen
+   - [x] Kontakt-E-Mail in Studio → «Club – Allgemein» auf `ehcwintistars@gmx.ch` gesetzt (2026-11-03)
      (`info@wintistars.ch` hat noch keine MX-Einträge, Mail dorthin kommt nicht an)
    - [ ] Nach dem DNS-Umzug: Cloudflare Email Routing `info@wintistars.ch` → `ehcwintistars@gmx.ch`, dann Kontakt-E-Mail
      wieder auf `info@` umstellen
