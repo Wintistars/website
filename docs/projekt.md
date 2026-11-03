@@ -52,6 +52,9 @@ Vorbild für einen professionellen Auftritt: <https://www.ehc-winterthur.ch>.
 - GMX FreeMail: gemeinsames Passwort (keine Delegation), 1 GB Speicher, Werbung. Inaktive Gratis-Konten können gelöscht
   werden → regelmässig einloggen.
 
+- Die Kontakt-E-Mail steht nicht im HTML (Schutz vor Spam-Sammlern): `src/components/EmailLink.astro` setzt sie erst im
+  Browser per JavaScript ein. Ohne JavaScript zeigt der Link «E-Mail» und führt zum Kontaktformular.
+
 ### Konten, Zugänge, Tokens
 
 Siehe [README → Systeme und Konten](../README.md#systeme-und-konten) (einzige Quelle; dort nachführen).

@@ -7,6 +7,7 @@ import '@fontsource-variable/instrument-sans';
 import '@fontsource/permanent-marker';
 import '../styles/site.css';
 import Magnet from '../components/Magnet.astro';
+import EmailLink from '../components/EmailLink.astro';
 import Eismaschine from '../components/Eismaschine.astro';
 import { abschnittLink, NAVIGATION } from '../lib/navigation';
 import { getVerein } from '../lib/sanity';
@@ -179,7 +180,7 @@ const spielLink = naechstes ? zu('spiele') : '/spielplan/';
         </div>
         <div class="wrap fuss-unten">
           <p>© {new Date().getFullYear()} {VEREIN}</p>
-          {verein?.kontaktEmail && <a href={`mailto:${verein.kontaktEmail}`}>{verein.kontaktEmail}</a>}
+          {verein?.kontaktEmail && <EmailLink email={verein.kontaktEmail} />}
           <a href="#" data-nach-oben>Nach oben <span aria-hidden="true">↑</span></a>
         </div>
       </footer>
