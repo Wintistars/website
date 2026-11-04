@@ -1675,6 +1675,10 @@ a.karte-link:hover {
   stroke-width: 2;
   pointer-events: none;
 }
+.team-band[data-hoch] .tb-motiv-quer,
+.team-band:not([data-hoch]) .tb-motiv-hoch {
+  display: none;
+}
 .tb-rot {
   stroke: rgb(216 67 60 / 0.1);
   stroke-width: 6;

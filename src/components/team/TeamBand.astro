@@ -25,23 +25,33 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
 ---
 
 <section class="team-band" id="team" aria-labelledby="team-titel">
-  <!-- Eisfeld massstäblich (60 × 30 m, 1 m = 20 Einheiten), Mittellinie in der Bildmitte -->
-  <svg class="tb-motiv" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
-    <line x1="80" y1="0" x2="80" y2="600" class="tb-torlinie" />
-    <line x1="1120" y1="0" x2="1120" y2="600" class="tb-torlinie" />
-    <line x1="425" y1="0" x2="425" y2="600" class="tb-blau" />
-    <line x1="775" y1="0" x2="775" y2="600" class="tb-blau" />
-    <line x1="600" y1="0" x2="600" y2="600" class="tb-rot" />
-    <circle cx="600" cy="300" r="90" />
-    <circle cx="600" cy="300" r="5" class="tb-punkt" />
-    {[200, 1000].flatMap((x) => [160, 440].map((y) => (
-      <>
-        <circle cx={x} cy={y} r="90" />
-        <circle cx={x} cy={y} r="6" class="tb-punkt" />
-      </>
-    )))}
-    {[455, 745].flatMap((x) => [160, 440].map((y) => <circle cx={x} cy={y} r="6" class="tb-punkt" />))}
-  </svg>
+  <!-- Eisfeld massstäblich (60 × 30 m, 1 m = 20 Einheiten), Mittellinie in der Bildmitte. Auf hohen Bändern (Handy)
+       steht das Feld aufrecht; welches gilt, setzt das Script unten (ohne JS: quer). -->
+  {
+    [
+      ['quer', '0 0 1200 600', undefined],
+      ['hoch', '0 0 600 1200', 'matrix(0 1 1 0 0 0)'],
+    ].map(([lage, box, drehen]) => (
+      <svg class={`tb-motiv tb-motiv-${lage}`} viewBox={box} preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+        <g transform={drehen}>
+          <line x1="80" y1="0" x2="80" y2="600" class="tb-torlinie" />
+          <line x1="1120" y1="0" x2="1120" y2="600" class="tb-torlinie" />
+          <line x1="425" y1="0" x2="425" y2="600" class="tb-blau" />
+          <line x1="775" y1="0" x2="775" y2="600" class="tb-blau" />
+          <line x1="600" y1="0" x2="600" y2="600" class="tb-rot" />
+          <circle cx="600" cy="300" r="90" />
+          <circle cx="600" cy="300" r="5" class="tb-punkt" />
+          {[200, 1000].flatMap((x) => [160, 440].map((y) => (
+            <>
+              <circle cx={x} cy={y} r="90" />
+              <circle cx={x} cy={y} r="6" class="tb-punkt" />
+            </>
+          )))}
+          {[455, 745].flatMap((x) => [160, 440].map((y) => <circle cx={x} cy={y} r="6" class="tb-punkt" />))}
+        </g>
+      </svg>
+    ))
+  }
   <!-- Im Hintergrund dreht die Eismaschine gemächlich ihre Runden und hinterlässt eine nasse Spur -->
   <div class="tb-hinter" aria-hidden="true" data-tb-zb>
     <canvas class="tb-wasser" data-tb-wasser></canvas>
@@ -216,6 +226,12 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
 <script>
   const reduziert = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // ---------- Team-Band: Eisfeld quer oder aufrecht, je nach Form des Bands ----------
+  const tbBand = document.querySelector<HTMLElement>('.team-band');
+  if (tbBand) {
+    new ResizeObserver(() => tbBand.toggleAttribute('data-hoch', tbBand.clientHeight > tbBand.clientWidth * 1.2)).observe(tbBand);
+  }
+
   // ---------- Team-Band: Eismaschine fährt im Hintergrund Runden ----------
   // Gleitende Ovale wie in der Halle (und wie beim Eisaufbereiten im Hero): lange Geraden über das Band, rechts
   // eine weite Wende, eine halbe Bandhöhe tiefer zurück, links eine Wende auf die nächste Bahn eine Abzieherbreite
@@ -239,10 +255,16 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
     let s = 0;
     let masse = '';
     const vermessen = () => {
-      mL = maschine.offsetWidth;
-      mH = maschine.offsetHeight;
       const w = tbHinter.clientWidth;
       const h = tbHinter.clientHeight;
+      // Grösse im Massstab des Eisfelds: Das Feld wird wie das SVG (slice) auf das Band skaliert, 20 Einheiten = 1 m.
+      // Die Maschine (viewBox 264 × 128) ist 128 Einheiten = 2,24 m breit, mit Conditioner und Front 4,3 m lang.
+      // Höchstens ein Viertel der schmalen Bandseite, damit die Runden auch auf kleinen Bändern Platz haben.
+      const [fw, fh] = h > w * 1.2 ? [600, 1200] : [1200, 600];
+      const proMeter = 20 * Math.max(w / fw, h / fh);
+      maschine.style.height = `${Math.min(2.24 * proMeter, Math.min(w, h) / 4).toFixed(1)}px`;
+      mL = maschine.offsetWidth;
+      mH = maschine.offsetHeight;
       // Nur bei echter Grössenänderung neu rechnen; die Maschine behält ihre Stelle im Muster, die Spur beginnt
       // neu (sonst verbände sie alte und neue Bahn zu einem schrägen Keil)
       if (masse === `${w}x${h}x${mL}`) return;
