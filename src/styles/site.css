@@ -1683,6 +1683,9 @@ a.karte-link:hover {
   stroke: rgb(98 140 220 / 0.1);
   stroke-width: 6;
 }
+.tb-torlinie {
+  stroke: rgb(216 67 60 / 0.1);
+}
 .tb-punkt {
   fill: rgb(246 241 231 / 0.1);
   stroke: none;

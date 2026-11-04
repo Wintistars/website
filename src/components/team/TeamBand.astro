@@ -25,14 +25,22 @@ const farbe = (s: KaderSpieler) => (s.position === 'torhueter' ? 'g' : s.positio
 ---
 
 <section class="team-band" id="team" aria-labelledby="team-titel">
+  <!-- Eisfeld massstäblich (60 × 30 m, 1 m = 20 Einheiten), Mittellinie in der Bildmitte -->
   <svg class="tb-motiv" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
-    <line x1="760" y1="0" x2="760" y2="600" class="tb-rot" />
-    <line x1="440" y1="0" x2="440" y2="600" class="tb-blau" />
-    <line x1="1080" y1="0" x2="1080" y2="600" class="tb-blau" />
-    <circle cx="760" cy="300" r="150" />
-    <circle cx="760" cy="300" r="5" class="tb-punkt" />
-    <circle cx="250" cy="140" r="150" />
-    <circle cx="250" cy="460" r="150" />
+    <line x1="80" y1="0" x2="80" y2="600" class="tb-torlinie" />
+    <line x1="1120" y1="0" x2="1120" y2="600" class="tb-torlinie" />
+    <line x1="425" y1="0" x2="425" y2="600" class="tb-blau" />
+    <line x1="775" y1="0" x2="775" y2="600" class="tb-blau" />
+    <line x1="600" y1="0" x2="600" y2="600" class="tb-rot" />
+    <circle cx="600" cy="300" r="90" />
+    <circle cx="600" cy="300" r="5" class="tb-punkt" />
+    {[200, 1000].flatMap((x) => [160, 440].map((y) => (
+      <>
+        <circle cx={x} cy={y} r="90" />
+        <circle cx={x} cy={y} r="6" class="tb-punkt" />
+      </>
+    )))}
+    {[455, 745].flatMap((x) => [160, 440].map((y) => <circle cx={x} cy={y} r="6" class="tb-punkt" />))}
   </svg>
   <!-- Im Hintergrund dreht die Eismaschine gemächlich ihre Runden und hinterlässt eine nasse Spur -->
   <div class="tb-hinter" aria-hidden="true" data-tb-zb>
