@@ -1,22 +1,20 @@
 ---
 // E-Mail-Link, dessen Adresse nicht im HTML steht (Schutz vor Spam-Sammlern).
-// Die Adresse liegt umgekehrt und Base64-kodiert in data-mail; das Script setzt href und Text erst im Browser.
-// Ohne JavaScript zeigt der Link den Slot-Text bzw. «E-Mail» und führt zum Kontaktformular.
+// Die Adresse liegt umgekehrt und Base64-kodiert in data-mail; das Script setzt das mailto erst im Browser.
+// Sichtbar ist nur `text`, die Adresse selbst nie. Ohne JavaScript führt der Link zum Kontaktformular.
 interface Props {
   email: string;
+  text?: string;
   class?: string;
 }
-const { email, class: klasse } = Astro.props;
+const { email, text = 'E-Mail schreiben', class: klasse } = Astro.props;
 const kodiert = btoa([...email].reverse().join(''));
 ---
 
-<a class={klasse} href="/#kontakt" data-mail={kodiert}><slot /><span data-mail-text>E-Mail</span></a>
+<a class={klasse} href="/#kontakt" data-mail={kodiert}><slot />{text}</a>
 
 <script>
   for (const link of document.querySelectorAll<HTMLAnchorElement>('a[data-mail]')) {
-    const adresse = [...atob(link.dataset.mail ?? '')].reverse().join('');
-    link.href = `mailto:${adresse}`;
-    const text = link.querySelector('[data-mail-text]');
-    if (text) text.textContent = adresse;
+    link.href = `mailto:${[...atob(link.dataset.mail ?? '')].reverse().join('')}`;
   }
 </script>
