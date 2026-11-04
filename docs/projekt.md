@@ -91,7 +91,7 @@ Siehe [README → Systeme und Konten](../README.md#systeme-und-konten) (einzige 
    - [ ] Teamfoto und Spielerporträts (erst 2027, bis dahin Platzhalter)
 10. [ ] Editoren im Sanity-Projekt einladen
 11. [x] Design: Entwurf B «Taktiktafel» gewählt und umgesetzt (2026-10-04), Entwürfe A/C entfernt
-   - [ ] Logo als Vektordatei (aktuell Rasterbild-Platzhalter `public/logo-platzhalter.webp`)
+   - [ ] Logo als Vektordatei (aktuell Rasterbild-Platzhalter `public/logo-platzhalter.webp`); Favicons (`favicon.ico`, `icon-192.png`, `apple-touch-icon.png`) sind daraus zugeschnitten und beim Austausch neu zu erzeugen
    - [ ] Kontaktformular aktivieren: Versand über Resend (Code vorhanden), Empfänger `KONTAKT_AN` = `ehcwintistars@gmx.ch`.
      Braucht eine bei Resend verifizierte Domain → nach dem DNS-Umzug (Punkt 13). Bis dahin zeigt das Formular bei Fehlern
      die Kontakt-E-Mail aus «Club – Allgemein» an.
